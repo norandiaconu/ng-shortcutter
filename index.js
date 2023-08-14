@@ -85,16 +85,20 @@ switch(p2) {
     npmCheck({skipUnused: true})
       .then(currentState => {
         log(magenta("Name                              Current   Wanted    Latest    Homepage"));
+        let anyOutdated = false;
+        let outdatedList = [];
         currentState.get('packages').forEach(pack => {
           if (!pack.pkgError && !pack.notInPackageJson) {
             let outdated = pack.moduleName.padEnd(34) + pack.installed.padEnd(10) + pack.packageWanted.padEnd(10) + pack.latest.padEnd(10)
               + "https://npmjs.com/package/" + pack.moduleName;
+            outdatedList.push(outdated);
             if (pack.installed !== pack.latest) {
               if (pack.installed === pack.packageWanted) {
                 log(red(outdated));
               } else {
                 log(yellow(outdated));
               }
+              anyOutdated = true;
             } else {
               if (p2 === "oo") {
                 log(green(outdated));
@@ -102,6 +106,11 @@ switch(p2) {
             }
           }
         });
+        if (!anyOutdated && p2 !== "oo") {
+          outdatedList.forEach(outdated => {
+            log(green(outdated));
+          });
+        }
       });
       break;
   case "gc":
@@ -126,8 +135,13 @@ switch(p2) {
     spawn("npm un -g", [p3], inherit);
     break;
   case "i":
-    log(yellow("npm install ") + magenta(p3));
-    spawn("npm i", [p3], inherit);
+    if (p3) {
+      log(yellow("npm install ") + magenta(p3));
+      spawn("npm i", [p3], inherit);
+    } else {
+      log(yellow("npm install"));
+      spawn("npm i", inherit);
+    }
     break;
   case "id":
     log(yellow("npm install ") + magenta(p3) + green(" -D"));
@@ -150,26 +164,21 @@ switch(p2) {
       log(red("   ul") + grey("│") + yellow("npm unlink ") + magenta("package"));
     }
     break;
+  case "up":
+    log(yellow("npm update"));
+    spawn("npm up", inherit);
+    break;
   case "p":
-    fs.readFile("./package.json", "utf8", (err, jsonString) => {
-      const packageRegex = /\"scripts\": {\s\n?(.*?)\s*},/s;
-      const regexArray = packageRegex.exec(jsonString);
-      if (regexArray) {
-        const scripts = regexArray[1].replace(/\"|,/g, "");
-        const scriptsArray = scripts.split("\n");
-        const scriptsRegex = /(.*?)(: )(.*)/;
-        scriptsArray.forEach(script => {
-          const commandParts = scriptsRegex.exec(script);
-          if (commandParts) {
-            log(red(commandParts[1]) + commandParts[2] + yellow(commandParts[3]));
-          } else {
-            log(script);
-          }
-        });
-      } else {
-        log(red("No scripts found\n") + jsonString);
-      }
-    });
+    scripts(true);
+    break;
+  case "r":
+    if (p3) {
+      log(yellow("npm run ") + magenta(p3));
+      spawn("npm run ", [p3], inherit);
+    } else {
+      log(red("Usage") + grey("│"));
+      log(red("    r") + grey("│") + yellow("npm run ") + magenta("script-name"));
+    }
     break;
   case "s":
     log(yellow("ng serve"));
@@ -190,23 +199,66 @@ switch(p2) {
     spawn("ng v", inherit);
     break;
   default:
-    log(red("General Shortcuts                            Package Shortcuts"));
-    log(red("   a") + grey("│") + yellow("audit").padEnd(50)
-      + red("   g") + grey("│") + yellow("global list"));
-    log(red("   b") + grey("│") + yellow("ng build").padEnd(50)
-      + red("  gi") + grey("│") + yellow("global install ") + magenta("package-name"));
-    log(red("   c") + grey("│") + yellow("cost-of-modules ").padEnd(50)
-      + red("  gu") + grey("│") + yellow("global uninstall ") + magenta("package-name"));
-    log(red("   d") + grey("│") + yellow("depcheck ").padEnd(50)
-      + red("   i") + grey("│") + yellow("install ") + magenta("package-name"));
-    log(red("  gc") + grey("│") + yellow("git cherry-pick ") + magenta("commit-hash").padEnd(34)
-      + red("  id") + grey("│") + yellow("install ") + magenta("package-name ") + green("-D"));
-    log(red("   o") + grey("│") + yellow("outdated").padEnd(50)
-      + red("  un") + grey("│") + yellow("uninstall ") + magenta("package-name"));
-    log(red("   s") + grey("│") + yellow("ng serve").padEnd(50)
-      + red("   l") + grey("│") + yellow("link"));
-    log(red("   t") + grey("│") + yellow("ng test ") + magenta("optional-file-name") + green(".spec.ts").padEnd(24)
-      + red("  ul") + grey("│") + yellow("unlink ") + magenta("package-name"));
-    log(red("   v") + grey("│") + yellow("ng version").padEnd(50)
-      + red("   p") + grey("│") + yellow("display scripts from package.json"));
+    if (p2) {
+      const commands = scripts();
+      if (commands.includes(p2)) {
+        log(yellow("npm run ") + magenta(p2));
+        spawn("npm run ", [p2], inherit);
+      } else {
+        log(magenta("    " + p2) + ": " + grey("script not found"));
+        scripts(true);
+      }
+    } else {
+      instructions();
+    }
+}
+
+function scripts(show) {
+  let commandsArray = [];
+  const jsonString = fs.readFileSync("./package.json", "utf8");
+  const packageRegex = /\"scripts\": {\s\n?(.*?)\s*},/s;
+  const regexArray = packageRegex.exec(jsonString);
+  if (regexArray) {
+    const scripts = regexArray[1].replace(/\"|,/g, "");
+    const scriptsArray = scripts.split("\n");
+    const scriptsRegex = /(.*?)(: )(.*)/;
+    scriptsArray.forEach(script => {
+      const commandParts = scriptsRegex.exec(script);
+      if (commandParts) {
+        commandsArray.push(commandParts[1].trim());
+        if (show) {
+          log(red(commandParts[1]) + commandParts[2] + yellow(commandParts[3]));
+        }
+      } else {
+        log(script);
+      }
+    });
+  } else {
+    log(red("No scripts found\n") + jsonString);
+  }
+  return commandsArray;
+}
+
+function instructions() {
+  log(red("General Shortcuts                            Package Shortcuts"));
+  log(red("   a") + grey("│") + yellow("audit").padEnd(50)
+    + red("   g") + grey("│") + yellow("global list"));
+  log(red("   b") + grey("│") + yellow("ng build").padEnd(50)
+    + red("  gi") + grey("│") + yellow("global install ") + magenta("package-name"));
+  log(red("   c") + grey("│") + yellow("cost-of-modules ").padEnd(50)
+    + red("  gu") + grey("│") + yellow("global uninstall ") + magenta("package-name"));
+  log(red("   d") + grey("│") + yellow("depcheck ").padEnd(50)
+    + red("   i") + grey("│") + yellow("install ") + magenta("optional-package-name"));
+  log(red("  gc") + grey("│") + yellow("git cherry-pick ") + magenta("commit-hash").padEnd(34)
+    + red("  id") + grey("│") + yellow("install ") + magenta("package-name ") + green("-D"));
+  log(red("   o") + grey("│") + yellow("outdated").padEnd(50)
+    + red("  un") + grey("│") + yellow("uninstall ") + magenta("package-name"));
+  log(red("   r") + grey("│") + yellow("npm run ") + magenta("script-name").padEnd(42)
+    + red("   l") + grey("│") + yellow("link"));
+  log(red("   s") + grey("│") + yellow("ng serve").padEnd(50)
+    + red("  ul") + grey("│") + yellow("unlink ") + magenta("package-name"));
+  log(red("   t") + grey("│") + yellow("ng test ") + magenta("optional-file-name") + green(".spec.ts").padEnd(24)
+    + red("  up") + grey("|") + yellow("npm update"));
+  log(red("   v") + grey("│") + yellow("ng version").padEnd(50)
+    + red("   p") + grey("│") + yellow("display scripts from package.json"));
 }
