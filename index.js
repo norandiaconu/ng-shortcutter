@@ -25,38 +25,48 @@ switch(p2) {
       if (!Object.keys(vulnerabilities).length) {
         log(green("found 0 vulnerabilities"));
       } else {
-        log(magenta("Package                            Range"));
-        for (let i in vulnerabilities) {
-          let pack = "";
-          if (vulnerabilities[i].fixAvailable.name) {
-            pack = vulnerabilities[i].fixAvailable.name;
-          } else {
-            pack = vulnerabilities[i].nodes[0].split("/").pop();
-          }
-          let vuln = "";
-          if (pack === vulnerabilities[i].name) {
-            vuln = pack.padEnd(35) + vulnerabilities[i].range.padEnd(10);
-          } else {
-            vuln = pack + "\n" + ("    " + vulnerabilities[i].name).padEnd(35) + vulnerabilities[i].range.padEnd(10);
-          }
-          switch(vulnerabilities[i].severity) {
-            case "critical":
-              log(magenta(vuln));
-              break;
-            case "high":
-              log(red(vuln));
-              break;
-            case "moderate":
-              log(yellow(vuln));
-              break;
-            case "low":
-              log(green(vuln));
-              break;
-            default:
-              log(vuln);
-          }
-          log(grey('─'.repeat(process.stdout.columns)));
-        }
+        log(magenta("Package                            Range/Latest"));
+        npmCheck({skipUnused: true})
+          .then(currentState => {
+            for (let i in vulnerabilities) {
+              let pack = "";
+              if (vulnerabilities[i].fixAvailable.name) {
+                pack = vulnerabilities[i].fixAvailable.name;
+              } else {
+                pack = vulnerabilities[i].nodes[0].split("/").pop();
+              }
+              let vuln = "";
+              if (pack === vulnerabilities[i].name) {
+                vuln = pack.padEnd(35) + vulnerabilities[i].range.padEnd(10);
+              } else {
+                vuln = pack + "\n" + ("    " + vulnerabilities[i].name).padEnd(35) + vulnerabilities[i].range.padEnd(10);
+              }
+              if (vulnerabilities[i].isDirect || vulnerabilities[i].fixAvailable.name) {
+                switch(vulnerabilities[i].severity) {
+                  case "critical":
+                  case "high":
+                    log(red(vuln));
+                    break;
+                  case "moderate":
+                    log(yellow(vuln));
+                    break;
+                  case "low":
+                    log(green(vuln));
+                    break;
+                  default:
+                    log(vuln);
+                }
+                currentState.get('packages').forEach(pack => {
+                  if (vulnerabilities[i].name === pack.moduleName) {
+                    log("".padEnd(35) + pack.latest);
+                  }
+                });
+              } else {
+                log(grey(vuln));
+              }
+              log(grey('─'.repeat(process.stdout.columns)));
+            }
+          });
       }
     });
     break;
@@ -216,7 +226,7 @@ switch(p2) {
 function scripts(show) {
   let commandsArray = [];
   const jsonString = fs.readFileSync("./package.json", "utf8");
-  const packageRegex = /\"scripts\": {\s\n?(.*?)\s*},/s;
+  const packageRegex = /\"scripts\": {\s\n?(.*?)\s*}/s;
   const regexArray = packageRegex.exec(jsonString);
   if (regexArray) {
     const scripts = regexArray[1].replace(/\"|,/g, "");
