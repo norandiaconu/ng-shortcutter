@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import spawn from "cross-spawn";
 import chalk from "chalk";
 import depcheck from "depcheck4";
 import * as fs from "fs";
 import npmCheck from "npm-check";
+import { $ } from 'execa';
 
-const inherit = { stdio: "inherit" };
+const $$ = $({stdio: 'inherit'});
 const log = console.log;
 const red = chalk.red;
 const yellow = chalk.yellow;
@@ -17,7 +17,7 @@ const p3 = process.argv[3];
 
 switch(p2) {
   case "a":
-    const audit = spawn("npm audit --json");
+    const audit = $`npm audit --json`;
     audit.stdout.setEncoding("utf8");
     audit.on("error", function() {});
     audit.stdout.on("data", function(data) {
@@ -40,6 +40,9 @@ switch(p2) {
                 vuln = pack.padEnd(35) + vulnerabilities[i].range.padEnd(10);
               } else {
                 vuln = pack + "\n" + ("    " + vulnerabilities[i].name).padEnd(35) + vulnerabilities[i].range.padEnd(10);
+              }
+              if (vulnerabilities[i].fixAvailable === true) {
+                vuln = vuln + " <- npm audit fix";
               }
               if (vulnerabilities[i].isDirect || vulnerabilities[i].fixAvailable.name) {
                 switch(vulnerabilities[i].severity) {
@@ -72,11 +75,11 @@ switch(p2) {
     break;
   case "b":
     log(yellow("ng build"));
-    spawn("ng build", inherit);
+    $$`ng build`;
     break;
   case "c":
     log(yellow("cost-of-modules ") + green("--no-install --include-dev"));
-    spawn("cost-of-modules --no-install --include-dev", inherit);
+    $$`cost-of-modules --no-install --include-dev`;
     break;
   case "d":
     log(yellow("depcheck"));
@@ -126,7 +129,7 @@ switch(p2) {
   case "gc":
     if (p3) {
       log(yellow("git cherry-pick ") + magenta(p3));
-      spawn("git cherry-pick", [p3], inherit);
+      $$`git cherry-pick ${p3}`;
     } else {
       log(red("Usage") + grey("│"));
       log(red("   gc") + grey("│") + yellow("git cherry-pick ") + magenta("commit-hash"));
@@ -134,41 +137,42 @@ switch(p2) {
     break;
   case "g":
     log(yellow("npm list ") + green("-g"));
-    spawn("npm ls -g", inherit);
+    $$`npm ls -g`;
     break;
   case "gi":
     log(yellow("npm install ") + magenta(p3) + green(" -g"));
-    spawn("npm i -g", [p3], inherit);
+    $$`npm i ${p3} -g`;
     break;
   case "gu":
     log(yellow("npm uninstall ") + magenta(p3) + green(" -g"));
-    spawn("npm un -g", [p3], inherit);
+    $$`npm un ${p3} -g`;
     break;
   case "i":
     if (p3) {
       log(yellow("npm install ") + magenta(p3));
-      spawn("npm i", [p3], inherit);
+      $$`npm i ${p3}`;
     } else {
       log(yellow("npm install"));
-      spawn("npm i", inherit);
+      $$`npm i`;
     }
     break;
   case "id":
     log(yellow("npm install ") + magenta(p3) + green(" -D"));
-    spawn("npm i -D", [p3], inherit);
+    $$`npm i -D ${p3}`;
     break;
   case "un":
     log(yellow("npm uninstall ") + magenta(p3));
-    spawn("npm un ", [p3], inherit);
+    $$`npm un ${p3}`;
     break;
   case "l":
     log(yellow("npm link && npm ls ") + green("-g"));
-    spawn("npm link && npm ls -g", inherit);
+    await $$`npm link`;
+    $$`npm ls -g`;
     break;
   case "ul":
     if (p3) {
       log(yellow("npm unlink ") + magenta(p3) + green(" -g"));
-      spawn("npm unlink -g", [p3], inherit);
+      $$`npm unlink ${p3} -g`;
     } else {
       log(red("Usage") + grey("│"));
       log(red("   ul") + grey("│") + yellow("npm unlink ") + magenta("package"));
@@ -176,7 +180,7 @@ switch(p2) {
     break;
   case "up":
     log(yellow("npm update"));
-    spawn("npm up", inherit);
+    $$`npm up`;
     break;
   case "p":
     scripts(true);
@@ -184,7 +188,7 @@ switch(p2) {
   case "r":
     if (p3) {
       log(yellow("npm run ") + magenta(p3));
-      spawn("npm run ", [p3], inherit);
+      $$`npm run ${p3}`;
     } else {
       log(red("Usage") + grey("│"));
       log(red("    r") + grey("│") + yellow("npm run ") + magenta("script-name"));
@@ -192,28 +196,39 @@ switch(p2) {
     break;
   case "s":
     log(yellow("ng serve"));
-    spawn("ng s", inherit);
+    $$`ng s`;
     break;
   case "t":
+  case "j":
     if (!p3) {
-      log(yellow("ng test"));
-      spawn("ng test", inherit);
+      log(yellow("jest"));
+      $$`jest`;
     } else {
-      log(yellow("ng test --include=**\\") + magenta(p3) + yellow(".component.spec.ts --include=**\\") + magenta(p3)
-        + yellow(".service.spec.ts --no-sandbox"));
-      spawn("ng test --code-coverage --include=**\\" + p3 + ".component.spec.ts --include=**\\"+ p3 + ".service.spec.ts", inherit);
+      log(yellow("jest ") + magenta(p3));
+      $$`jest ${p3}`;
+    }
+    break;
+  case "tc":
+  case "jc":
+    if (!p3) {
+      log(yellow("jest --collectCoverage"));
+      $$`jest --collectCoverage`;
+    } else {
+      log(yellow("jest ") + magenta(p3) + yellow(" --collectCoverage"));
+      $$`jest ${p3} --collectCoverage`;
     }
     break;
   case "v":
     log(yellow("ng version"));
-    spawn("ng v", inherit);
+    $$`nvm list`;
+    $$`ng v`;
     break;
   default:
     if (p2) {
       const commands = scripts();
       if (commands.includes(p2)) {
         log(yellow("npm run ") + magenta(p2));
-        spawn("npm run ", [p2], inherit);
+        $$`npm run ${p2}`;
       } else {
         log(magenta("    " + p2) + ": " + grey("script not found"));
         scripts(true);
@@ -267,7 +282,7 @@ function instructions() {
     + red("   l") + grey("│") + yellow("link"));
   log(red("   s") + grey("│") + yellow("ng serve").padEnd(50)
     + red("  ul") + grey("│") + yellow("unlink ") + magenta("package-name"));
-  log(red("   t") + grey("│") + yellow("ng test ") + magenta("optional-file-name") + green(".spec.ts").padEnd(24)
+  log(red("t/tc") + grey("│") + yellow("jest ") + magenta("optional-file-name  |tc|coverage").padEnd(45)
     + red("  up") + grey("|") + yellow("npm update"));
   log(red("   v") + grey("│") + yellow("ng version").padEnd(50)
     + red("   p") + grey("│") + yellow("display scripts from package.json"));

@@ -19,7 +19,7 @@ Run the `start` script
 * **o** outdated
 * **r** npm run `script-name`
 * **s** ng serve
-* **t** ng test --include=**\\`optional-file-name`.spec.ts
+* **t/tc** jest `optional-file-name`
 * **v** ng version
 ### Package Shortcuts
 * **g** global list
