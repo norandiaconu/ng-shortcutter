@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import chalk from "chalk";
-import depcheck from "depcheck4";
 import * as fs from "fs";
-import npmCheck from "npm-check";
 import { $ } from 'execa';
 
 const $$ = $({stdio: 'inherit'});
@@ -83,49 +81,53 @@ switch(p2) {
     break;
   case "d":
     log(yellow("depcheck"));
-    depcheck(process.cwd(), { ignoreMatches: ["tslib", "@types/*", "@angular-eslint/*", "@typescript-eslint/*"] }).then(unused => {
-      if (unused.dependencies.length !== 0) {
-        log("Unused dependencies\n", unused.dependencies);
-      }
-      if (unused.devDependencies.length !== 0) {
-        log("Unused devDependencies\n", unused.devDependencies);
-      }
-      log(green("depcheck done"));
+    import('depcheck4').then(depcheck => {
+      depcheck.default(process.cwd(), { ignoreMatches: ["tslib", "@types/*", "@angular-eslint/*", "@typescript-eslint/*"] }).then(unused => {
+        if (unused.dependencies.length !== 0) {
+          log("Unused dependencies\n", unused.dependencies);
+        }
+        if (unused.devDependencies.length !== 0) {
+          log("Unused devDependencies\n", unused.devDependencies);
+        }
+        log(green("depcheck done"));
+      });        
     });
     break;
   case "o":
   case "oo":
-    npmCheck({skipUnused: true})
-      .then(currentState => {
-        log(magenta("Name                              Current   Wanted    Latest    Homepage"));
-        let anyOutdated = false;
-        let outdatedList = [];
-        currentState.get('packages').forEach(pack => {
-          if (!pack.pkgError && !pack.notInPackageJson) {
-            let outdated = pack.moduleName.padEnd(34) + pack.installed.padEnd(10) + pack.packageWanted.padEnd(10) + pack.latest.padEnd(10)
-              + "https://npmjs.com/package/" + pack.moduleName;
-            outdatedList.push(outdated);
-            if (pack.installed !== pack.latest) {
-              if (pack.installed === pack.packageWanted) {
-                log(red(outdated));
+    log(magenta("Name                              Current   Wanted    Latest    Homepage"));
+    import('npm-check').then(npmCheck => {
+      npmCheck.default({skipUnused: true})
+        .then(currentState => {
+          let anyOutdated = false;
+          let outdatedList = [];
+          currentState.get('packages').forEach(pack => {
+            if (!pack.pkgError && !pack.notInPackageJson) {
+              let outdated = pack.moduleName.padEnd(34) + pack.installed.padEnd(10) + pack.packageWanted.padEnd(10) + pack.latest.padEnd(10)
+                + "https://npmjs.com/package/" + pack.moduleName;
+              outdatedList.push(outdated);
+              if (pack.installed !== pack.latest) {
+                if (pack.installed === pack.packageWanted) {
+                  log(red(outdated));
+                } else {
+                  log(yellow(outdated));
+                }
+                anyOutdated = true;
               } else {
-                log(yellow(outdated));
-              }
-              anyOutdated = true;
-            } else {
-              if (p2 === "oo") {
-                log(green(outdated));
+                if (p2 === "oo") {
+                  log(green(outdated));
+                }
               }
             }
+          });
+          if (!anyOutdated && p2 !== "oo") {
+            outdatedList.forEach(outdated => {
+              log(green(outdated));
+            });
           }
         });
-        if (!anyOutdated && p2 !== "oo") {
-          outdatedList.forEach(outdated => {
-            log(green(outdated));
-          });
-        }
-      });
-      break;
+    });
+    break;
   case "gc":
     if (p3) {
       log(yellow("git cherry-pick ") + magenta(p3));
