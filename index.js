@@ -24,8 +24,8 @@ switch(p2) {
         log(green("found 0 vulnerabilities"));
       } else {
         log(magenta("Package                            Range/Latest"));
-        npmCheck({skipUnused: true})
-          .then(currentState => {
+        import('npm-check').then(npmCheck => {
+          npmCheck.default({skipUnused: true}).then(currentState => {
             for (let i in vulnerabilities) {
               let pack = "";
               if (vulnerabilities[i].fixAvailable.name) {
@@ -68,6 +68,7 @@ switch(p2) {
               log(grey('─'.repeat(process.stdout.columns)));
             }
           });
+        });
       }
     });
     break;
@@ -82,14 +83,15 @@ switch(p2) {
   case "d":
     log(yellow("depcheck"));
     import('depcheck4').then(depcheck => {
-      depcheck.default(process.cwd(), { ignoreMatches: ["tslib", "@types/*", "@angular-eslint/*", "@typescript-eslint/*"] }).then(unused => {
-        if (unused.dependencies.length !== 0) {
-          log("Unused dependencies\n", unused.dependencies);
-        }
-        if (unused.devDependencies.length !== 0) {
-          log("Unused devDependencies\n", unused.devDependencies);
-        }
-        log(green("depcheck done"));
+      depcheck.default(process.cwd(), { ignoreMatches: ["tslib", "@types/*", "@angular-eslint/*", "@typescript-eslint/*"] })
+        .then(unused => {
+          if (unused.dependencies.length !== 0) {
+            log("Unused dependencies\n", unused.dependencies);
+          }
+          if (unused.devDependencies.length !== 0) {
+            log("Unused devDependencies\n", unused.devDependencies);
+          }
+          log(green("depcheck done"));
       });        
     });
     break;
@@ -97,35 +99,34 @@ switch(p2) {
   case "oo":
     log(magenta("Name                              Current   Wanted    Latest    Homepage"));
     import('npm-check').then(npmCheck => {
-      npmCheck.default({skipUnused: true})
-        .then(currentState => {
-          let anyOutdated = false;
-          let outdatedList = [];
-          currentState.get('packages').forEach(pack => {
-            if (!pack.pkgError && !pack.notInPackageJson) {
-              let outdated = pack.moduleName.padEnd(34) + pack.installed.padEnd(10) + pack.packageWanted.padEnd(10) + pack.latest.padEnd(10)
-                + "https://npmjs.com/package/" + pack.moduleName;
-              outdatedList.push(outdated);
-              if (pack.installed !== pack.latest) {
-                if (pack.installed === pack.packageWanted) {
-                  log(red(outdated));
-                } else {
-                  log(yellow(outdated));
-                }
-                anyOutdated = true;
+      npmCheck.default({skipUnused: true}).then(currentState => {
+        let anyOutdated = false;
+        let outdatedList = [];
+        currentState.get('packages').forEach(pack => {
+          if (!pack.pkgError && !pack.notInPackageJson) {
+            let outdated = pack.moduleName.padEnd(34) + pack.installed.padEnd(10) + pack.packageWanted.padEnd(10)
+              + pack.latest.padEnd(10) + "https://npmjs.com/package/" + pack.moduleName;
+            outdatedList.push(outdated);
+            if (pack.installed !== pack.latest) {
+              if (pack.installed === pack.packageWanted) {
+                log(red(outdated));
               } else {
-                if (p2 === "oo") {
-                  log(green(outdated));
-                }
+                log(yellow(outdated));
+              }
+              anyOutdated = true;
+            } else {
+              if (p2 === "oo") {
+                log(green(outdated));
               }
             }
-          });
-          if (!anyOutdated && p2 !== "oo") {
-            outdatedList.forEach(outdated => {
-              log(green(outdated));
-            });
           }
         });
+        if (!anyOutdated && p2 !== "oo") {
+          outdatedList.forEach(outdated => {
+            log(green(outdated));
+          });
+        }
+      });
     });
     break;
   case "gc":
