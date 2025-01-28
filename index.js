@@ -93,7 +93,7 @@ switch (p2) {
         break;
     case "d":
         log(yellow("depcheck"));
-        import("depcheck4").then((depcheck) => {
+        import("depcheck").then((depcheck) => {
             depcheck
                 .default(process.cwd(), { ignoreMatches: ["tslib", "@types/*", "@angular-eslint/*", "@typescript-eslint/*"] })
                 .then((unused) => {
@@ -148,11 +148,11 @@ switch (p2) {
         break;
     case "gc":
         if (p3) {
-            log(yellow("git cherry-pick ") + magenta(p3));
-            $$`git cherry-pick ${p3}`;
+            log(yellow("ng generate component ") + magenta(p3));
+            $$`ng g c ${p3}`;
         } else {
             log(red("Usage") + grey("│"));
-            log(red("   gc") + grey("│") + yellow("git cherry-pick ") + magenta("commit-hash"));
+            log(red("   gc") + grey("│") + yellow("ng generate component ") + magenta("component"));
         }
         break;
     case "g":
@@ -244,7 +244,7 @@ switch (p2) {
         }
         break;
     case "v":
-        log(yellow("ng version"));
+        log(yellow("ng/nvm version"));
         $$`nvm list`;
         $$`ng v`;
         break;
@@ -325,12 +325,12 @@ function instructions() {
             yellow("lint")
     );
     log(red("General                                      Package"));
-    log(red("a/af") + grey("│") + yellow("audit/audit fix").padEnd(50) + red("   g") + grey("│") + yellow("global list"));
+    log(red("a|af") + grey("│") + yellow("audit (fix)").padEnd(50) + red("   g") + grey("│") + yellow("global list"));
     log(
         red("   c") +
             grey("│") +
             yellow("cost-of-modules ").padEnd(49) +
-            red("gi/gu") +
+            red("gi|gu") +
             grey("│") +
             yellow("global (un)install ") +
             magenta("package")
@@ -347,8 +347,8 @@ function instructions() {
     log(
         red("  gc") +
             grey("│") +
-            yellow("git cherry-pick ") +
-            magenta("commit-hash").padEnd(34) +
+            yellow("ng generate component ") +
+            magenta("component").padEnd(28) +
             red("  id") +
             grey("│") +
             yellow("install ") +
@@ -368,13 +368,13 @@ function instructions() {
             magenta("package")
     );
     log(
-        red("t/tc") +
+        red("t|tc") +
             grey("│") +
-            yellow("jest/coverage ") +
-            magenta("optional-file").padEnd(36) +
+            yellow("jest (coverage) ") +
+            magenta("optional-file").padEnd(34) +
             red("  up") +
             grey("│") +
             yellow("npm update")
     );
-    log(red("   v") + grey("│") + yellow("ng version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
+    log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
 }
