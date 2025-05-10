@@ -2,7 +2,6 @@
 import chalk from "chalk";
 import * as fs from "fs";
 import { $ } from "execa";
-import killPort from "kill-port";
 import * as http from "http";
 
 const $$ = $({ stdio: "inherit" });
@@ -80,8 +79,8 @@ switch (p2) {
         break;
     case "b":
         if (scripts().includes("build")) {
-            log(yellow("npm run build"));
-            $$`npm run build`;
+            log(yellow("node --run build"));
+            $$`node --run build`;
         } else {
             log(yellow("ng build"));
             $$`ng build`;
@@ -89,22 +88,19 @@ switch (p2) {
         break;
     case "c":
         log(yellow("cost-of-modules ") + green("--no-install --include-dev"));
-        $$`cost-of-modules --no-install --include-dev`;
+        $$`npx cost-of-modules --no-install --include-dev`;
         break;
     case "d":
-        log(yellow("depcheck"));
-        import("depcheck").then((depcheck) => {
-            depcheck
-                .default(process.cwd(), { ignoreMatches: ["tslib", "@types/*", "@angular-eslint/*", "@typescript-eslint/*"] })
-                .then((unused) => {
-                    if (unused.dependencies.length !== 0) {
-                        log("Unused dependencies\n", unused.dependencies);
-                    }
-                    if (unused.devDependencies.length !== 0) {
-                        log("Unused devDependencies\n", unused.devDependencies);
-                    }
-                    log(green("depcheck done"));
+        import("npm-check").then((npmCheck) => {
+            npmCheck.default({ skipUnused: false }).then((currentState) => {
+                let filteredPacks = currentState
+                    .get("packages")
+                    .filter((pack) => pack.unused && pack.moduleName !== "tslib" && pack.moduleName !== "@angular-devkit/build-angular");
+                filteredPacks.forEach((pack) => {
+                    log(red(pack.moduleName));
                 });
+                log(yellow("Unused dependencies: "), red(filteredPacks.length));
+            });
         });
         break;
     case "o":
@@ -207,17 +203,17 @@ switch (p2) {
         break;
     case "r":
         if (p3) {
-            log(yellow("npm run ") + magenta(p3));
-            $$`npm run ${p3}`;
+            log(yellow("node --run ") + magenta(p3));
+            $$`node --run ${p3}`;
         } else {
             log(red("Usage") + grey("│"));
-            log(red("    r") + grey("│") + yellow("npm run ") + magenta("script-name"));
+            log(red("    r") + grey("│") + yellow("node --run ") + magenta("script-name"));
         }
         break;
     case "s":
         if (scripts().includes("start")) {
-            log(yellow("npm run start"));
-            $$`npm run start`;
+            log(yellow("node --run start"));
+            $$`node --run start`;
         } else {
             log(yellow("ng s"));
             $$`ng s`;
@@ -250,6 +246,8 @@ switch (p2) {
         break;
     case "k":
         if (p3) {
+            const killPortImport = await import("kill-port");
+            const killPort = killPortImport.default;
             log(yellow("kill-port ") + magenta(p3));
             http.createServer().listen(p3, () => {
                 killPort(p3, "tcp").then(console.log).catch(console.log);
@@ -260,8 +258,8 @@ switch (p2) {
         break;
     case "l":
         if (scripts().includes("lint")) {
-            log(yellow("npm run lint"));
-            $$`npm run lint`;
+            log(yellow("node --run lint"));
+            $$`node --run lint`;
         } else {
             log(yellow("eslint ."));
             $$`eslint .`;
@@ -271,8 +269,8 @@ switch (p2) {
         if (p2) {
             const commands = scripts();
             if (commands.includes(p2)) {
-                log(yellow("npm run ") + magenta(p2));
-                $$`npm run ${p2}`;
+                log(yellow("node --run ") + magenta(p2));
+                $$`node --run ${p2}`;
             } else {
                 log(magenta("    " + p2) + ": " + grey("script not found"));
                 scripts(true);
@@ -338,7 +336,7 @@ function instructions() {
     log(
         red("   d") +
             grey("│") +
-            yellow("depcheck ").padEnd(50) +
+            yellow("check unused dependencies").padEnd(50) +
             red("   i") +
             grey("│") +
             yellow("install ") +
@@ -360,8 +358,8 @@ function instructions() {
     log(
         red("   r") +
             grey("│") +
-            yellow("npm run ") +
-            magenta("script").padEnd(42) +
+            yellow("node --run ") +
+            magenta("script").padEnd(39) +
             red("  ul") +
             grey("│") +
             yellow("unlink ") +
