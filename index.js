@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import chalk from "chalk";
-import * as fs from "fs";
+import fs from "fs";
 import { $ } from "execa";
-import * as http from "http";
 
 const $$ = $({ stdio: "inherit" });
 const log = console.log;
@@ -87,8 +86,27 @@ switch (p2) {
         }
         break;
     case "c":
-        log(yellow("cost-of-modules ") + green("--no-install --include-dev"));
-        $$`npx cost-of-modules --no-install --include-dev`;
+        const pathImport = await import("path");
+        const path = pathImport.default;
+        log(yellow("cost of dependencies"));
+        import("npm-check").then((npmCheck) => {
+            npmCheck.default({ skipUnused: true }).then((currentState) => {
+                const statePacks = currentState.get("packages");
+                const packSizes = [];
+                const dir = process.cwd();
+                statePacks.forEach((pack) => {
+                    packSizes.push(getDirectorySize(`${dir}\\node_modules\\${pack.moduleName}`, path));
+                });
+                const formattedPacks = [];
+                Promise.all(packSizes).then((sizes) => {
+                    sizes.forEach((size, i) => {
+                        formattedPacks.push({ name: statePacks[i].moduleName, size_MB: Number((size / 1000000).toFixed(2)) });
+                    });
+                    formattedPacks.sort((a, b) => b.size_MB - a.size_MB);
+                    console.table(formattedPacks);
+                });
+            });
+        });
         break;
     case "d":
         import("npm-check").then((npmCheck) => {
@@ -248,6 +266,8 @@ switch (p2) {
         if (p3) {
             const killPortImport = await import("kill-port");
             const killPort = killPortImport.default;
+            const httpImport = await import("http");
+            const http = httpImport.default;
             log(yellow("kill-port ") + magenta(p3));
             http.createServer().listen(p3, () => {
                 killPort(p3, "tcp").then(console.log).catch(console.log);
@@ -327,7 +347,7 @@ function instructions() {
     log(
         red("   c") +
             grey("│") +
-            yellow("cost-of-modules ").padEnd(49) +
+            yellow("cost of dependencies").padEnd(49) +
             red("gi|gu") +
             grey("│") +
             yellow("global (un)install ") +
@@ -375,4 +395,19 @@ function instructions() {
             yellow("npm update")
     );
     log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
+}
+
+async function getDirectorySize(dirPath, path) {
+    let totalSize = 0;
+    async function calculateSize(itemPath) {
+        const stats = await fs.promises.stat(itemPath);
+        if (stats.isFile()) {
+            totalSize += stats.size;
+        } else if (stats.isDirectory()) {
+            const items = await fs.promises.readdir(itemPath);
+            await Promise.all(items.map((item) => calculateSize(path.join(itemPath, item))));
+        }
+    }
+    await calculateSize(dirPath);
+    return totalSize;
 }
