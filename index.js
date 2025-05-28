@@ -78,8 +78,8 @@ switch (p2) {
         break;
     case "b":
         if (scripts().includes("build")) {
-            log(yellow("node --run build"));
-            $$`node --run build`;
+            log(yellow("npm run build"));
+            $$`npm run build`;
         } else {
             log(yellow("ng build"));
             $$`ng build`;
@@ -221,17 +221,17 @@ switch (p2) {
         break;
     case "r":
         if (p3) {
-            log(yellow("node --run ") + magenta(p3));
-            $$`node --run ${p3}`;
+            log(yellow("npm run ") + magenta(p3));
+            $$`npm run ${p3}`;
         } else {
             log(red("Usage") + grey("│"));
-            log(red("    r") + grey("│") + yellow("node --run ") + magenta("script-name"));
+            log(red("    r") + grey("│") + yellow("npm run ") + magenta("script-name"));
         }
         break;
     case "s":
         if (scripts().includes("start")) {
-            log(yellow("node --run start"));
-            $$`node --run start`;
+            log(yellow("npm run start"));
+            $$`npm run start`;
         } else {
             log(yellow("ng s"));
             $$`ng s`;
@@ -278,8 +278,8 @@ switch (p2) {
         break;
     case "l":
         if (scripts().includes("lint")) {
-            log(yellow("node --run lint"));
-            $$`node --run lint`;
+            log(yellow("npm run lint"));
+            $$`npm run lint`;
         } else {
             log(yellow("eslint ."));
             $$`eslint .`;
@@ -289,8 +289,8 @@ switch (p2) {
         if (p2) {
             const commands = scripts();
             if (commands.includes(p2)) {
-                log(yellow("node --run ") + magenta(p2));
-                $$`node --run ${p2}`;
+                log(yellow("npm run ") + magenta(p2));
+                $$`npm run ${p2}`;
             } else {
                 log(magenta("    " + p2) + ": " + grey("script not found"));
                 scripts(true);
@@ -378,8 +378,8 @@ function instructions() {
     log(
         red("   r") +
             grey("│") +
-            yellow("node --run ") +
-            magenta("script").padEnd(39) +
+            yellow("npm run ") +
+            magenta("script").padEnd(42) +
             red("  ul") +
             grey("│") +
             yellow("unlink ") +
