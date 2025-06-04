@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import chalk from "chalk";
 import fs from "fs";
-import { $ } from "execa";
+import { spawn } from "cross-spawn";
 
-const $$ = $({ stdio: "inherit" });
 const log = console.log;
 const red = chalk.red;
 const yellow = chalk.yellow;
@@ -13,10 +12,18 @@ const grey = chalk.grey;
 const p2 = process.argv[2];
 const p3 = process.argv[3];
 
+function $(cmd) {
+    const child = spawn(cmd, { stdio: "inherit", reject: true });
+    child.on("error", function (err) {
+        if (err.code !== "ENOENT") {
+            log(err);
+        }
+    });
+}
+
 switch (p2) {
     case "a":
-        const audit = $`npm audit --json`;
-        audit.stdout.setEncoding("utf8");
+        const audit = spawn(`npm audit --json`);
         audit.on("error", function () {});
         audit.stdout.on("data", function (data) {
             const vulnerabilities = JSON.parse(data).vulnerabilities;
@@ -74,15 +81,15 @@ switch (p2) {
         break;
     case "af":
         log(yellow("npm audit fix"));
-        $$`npm audit fix`;
+        $(`npm audit fix`);
         break;
     case "b":
         if (scripts().includes("build")) {
             log(yellow("npm run build"));
-            $$`npm run build`;
+            $(`npm run build`);
         } else {
             log(yellow("ng build"));
-            $$`ng build`;
+            $(`npx ng build`);
         }
         break;
     case "c":
@@ -163,7 +170,7 @@ switch (p2) {
     case "gc":
         if (p3) {
             log(yellow("ng generate component ") + magenta(p3));
-            $$`ng g c ${p3}`;
+            $(`npx ng g c ${p3}`);
         } else {
             log(red("Usage") + grey("│"));
             log(red("   gc") + grey("│") + yellow("ng generate component ") + magenta("component"));
@@ -171,42 +178,43 @@ switch (p2) {
         break;
     case "g":
         log(yellow("npm list ") + green("-g"));
-        $$`npm ls -g`;
+        $(`npm ls -g`);
         break;
     case "gi":
         log(yellow("npm install ") + magenta(p3) + green(" -g"));
-        $$`npm i ${p3} -g`;
+        $(`npm i ${p3} -g`);
         break;
     case "gu":
         log(yellow("npm uninstall ") + magenta(p3) + green(" -g"));
-        $$`npm un ${p3} -g`;
+        $(`npm un ${p3} -g`);
         break;
     case "i":
         if (p3) {
             log(yellow("npm install ") + magenta(p3));
-            $$`npm i ${p3}`;
+            $(`npm i ${p3}`);
         } else {
             log(yellow("npm install"));
-            $$`npm i`;
+            $(`npm i`);
         }
         break;
     case "id":
         log(yellow("npm install ") + magenta(p3) + green(" -D"));
-        $$`npm i -D ${p3}`;
+        $(`npm i -D ${p3}`);
         break;
     case "un":
         log(yellow("npm uninstall ") + magenta(p3));
-        $$`npm un ${p3}`;
+        $(`npm un ${p3}`);
         break;
     case "li":
         log(yellow("npm link && npm ls ") + green("-g"));
-        await $$`npm link`;
-        $$`npm ls -g`;
+        await spawn.sync(`npm link`);
+        $(`npm ls -g`);
         break;
     case "ul":
         if (p3) {
             log(yellow("npm unlink ") + magenta(p3) + green(" -g"));
-            $$`npm unlink ${p3} -g`;
+            await spawn.sync(`npm unlink ${p3} -g`);
+            $(`npm ls -g`);
         } else {
             log(red("Usage") + grey("│"));
             log(red("   ul") + grey("│") + yellow("npm unlink ") + magenta("package"));
@@ -214,7 +222,7 @@ switch (p2) {
         break;
     case "up":
         log(yellow("npm update"));
-        $$`npm up`;
+        $(`npm up`);
         break;
     case "p":
         scripts(true);
@@ -222,7 +230,7 @@ switch (p2) {
     case "r":
         if (p3) {
             log(yellow("npm run ") + magenta(p3));
-            $$`npm run ${p3}`;
+            $(`npm run ${p3}`);
         } else {
             log(red("Usage") + grey("│"));
             log(red("    r") + grey("│") + yellow("npm run ") + magenta("script-name"));
@@ -231,36 +239,36 @@ switch (p2) {
     case "s":
         if (scripts().includes("start")) {
             log(yellow("npm run start"));
-            $$`npm run start`;
+            $(`npm run start`);
         } else {
             log(yellow("ng s"));
-            $$`ng s`;
+            $(`npx ng s`);
         }
         break;
     case "t":
     case "j":
         if (!p3) {
             log(yellow("jest --max-workers=50%"));
-            $$`jest --max-workers=50%`;
+            $(`npx jest --max-workers=50%`);
         } else {
             log(yellow("jest ") + magenta(p3));
-            $$`jest ${p3}`;
+            $(`npx jest ${p3}`);
         }
         break;
     case "tc":
     case "jc":
         if (!p3) {
             log(yellow("jest --max-workers=50% --collectCoverage"));
-            $$`jest --collectCoverage`;
+            $(`jest --collectCoverage`);
         } else {
             log(yellow("jest ") + magenta(p3) + yellow(" --collectCoverage"));
-            $$`jest ${p3} --collectCoverage`;
+            $(`jest ${p3} --collectCoverage`);
         }
         break;
     case "v":
         log(yellow("ng/nvm version"));
-        $$`nvm list`;
-        $$`ng v`;
+        $(`npx ng v`);
+        $(`nvm list`);
         break;
     case "k":
         if (p3) {
@@ -279,18 +287,29 @@ switch (p2) {
     case "l":
         if (scripts().includes("lint")) {
             log(yellow("npm run lint"));
-            $$`npm run lint`;
+            $(`npm run lint`);
         } else {
             log(yellow("eslint ."));
-            $$`eslint .`;
+            $(`eslint .`);
         }
+        break;
+    case "nc":
+        fs.readdir(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, (err, files) => {
+            if (files == undefined || files?.length === 0) {
+                log(yellow("No npx cache to delete"));
+            } else {
+                fs.rm(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, { recursive: true }, (err) => {
+                    log(yellow("Npx cache deleted"));
+                });
+            }
+        });
         break;
     default:
         if (p2) {
             const commands = scripts();
             if (commands.includes(p2)) {
                 log(yellow("npm run ") + magenta(p2));
-                $$`npm run ${p2}`;
+                $(`npm run ${p2}`);
             } else {
                 log(magenta("    " + p2) + ": " + grey("script not found"));
                 scripts(true);
@@ -395,6 +414,7 @@ function instructions() {
             yellow("npm update")
     );
     log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
+    log(red("  nc") + grey("│") + yellow("clear npx cache"));
 }
 
 async function getDirectorySize(dirPath, path) {
