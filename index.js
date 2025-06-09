@@ -13,7 +13,7 @@ const p2 = process.argv[2];
 const p3 = process.argv[3];
 
 function $(cmd) {
-    const child = spawn(cmd, { stdio: "inherit", reject: true });
+    const child = spawn(cmd, p3 ? [p3] : [], { stdio: "inherit", reject: true });
     child.on("error", function (err) {
         if (err.code !== "ENOENT") {
             log(err);
@@ -170,10 +170,9 @@ switch (p2) {
     case "gc":
         if (p3) {
             log(yellow("ng generate component ") + magenta(p3));
-            $(`npx ng g c ${p3}`);
+            $(`npx ng g c`);
         } else {
-            log(red("Usage") + grey("│"));
-            log(red("   gc") + grey("│") + yellow("ng generate component ") + magenta("component"));
+            log(red("Provide component name"));
         }
         break;
     case "g":
@@ -181,29 +180,44 @@ switch (p2) {
         $(`npm ls -g`);
         break;
     case "gi":
-        log(yellow("npm install ") + magenta(p3) + green(" -g"));
-        $(`npm i ${p3} -g`);
+        if (p3) {
+            log(yellow("npm install ") + magenta(p3) + green(" -g"));
+            $(`npm i -g`);
+        } else {
+            log(red("Provide package name"));
+        }
         break;
     case "gu":
-        log(yellow("npm uninstall ") + magenta(p3) + green(" -g"));
-        $(`npm un ${p3} -g`);
+        if (p3) {
+            log(yellow("npm uninstall ") + magenta(p3) + green(" -g"));
+            $(`npm un -g`);
+        } else {
+            log(red("Provide package name"));
+        }
         break;
     case "i":
         if (p3) {
             log(yellow("npm install ") + magenta(p3));
-            $(`npm i ${p3}`);
         } else {
             log(yellow("npm install"));
-            $(`npm i`);
         }
+        $(`npm i`);
         break;
     case "id":
-        log(yellow("npm install ") + magenta(p3) + green(" -D"));
-        $(`npm i -D ${p3}`);
+        if (p3) {
+            log(yellow("npm install ") + magenta(p3) + green(" -D"));
+            $(`npm i -D`);
+        } else {
+            log(red("Provide package name"));
+        }
         break;
     case "un":
-        log(yellow("npm uninstall ") + magenta(p3));
-        $(`npm un ${p3}`);
+        if (p3) {
+            log(yellow("npm uninstall ") + magenta(p3));
+            $(`npm un`);
+        } else {
+            log(red("Provide package name"));
+        }
         break;
     case "li":
         log(yellow("npm link && npm ls ") + green("-g"));
@@ -213,11 +227,9 @@ switch (p2) {
     case "ul":
         if (p3) {
             log(yellow("npm unlink ") + magenta(p3) + green(" -g"));
-            await spawn.sync(`npm unlink ${p3} -g`);
-            $(`npm ls -g`);
+            await spawn.sync(`npm unlink -g`);
         } else {
-            log(red("Usage") + grey("│"));
-            log(red("   ul") + grey("│") + yellow("npm unlink ") + magenta("package"));
+            log(red("Provide package name"));
         }
         break;
     case "up":
@@ -230,10 +242,9 @@ switch (p2) {
     case "r":
         if (p3) {
             log(yellow("npm run ") + magenta(p3));
-            $(`npm run ${p3}`);
+            $(`npm run`);
         } else {
-            log(red("Usage") + grey("│"));
-            log(red("    r") + grey("│") + yellow("npm run ") + magenta("script-name"));
+            log(red("Provide script name"));
         }
         break;
     case "s":
@@ -247,23 +258,22 @@ switch (p2) {
         break;
     case "t":
     case "j":
-        if (!p3) {
+        if (p3) {
+            log(yellow("jest ") + magenta(p3));
+            $(`npx jest`);
+        } else {
             log(yellow("jest --max-workers=50%"));
             $(`npx jest --max-workers=50%`);
-        } else {
-            log(yellow("jest ") + magenta(p3));
-            $(`npx jest ${p3}`);
         }
         break;
     case "tc":
     case "jc":
-        if (!p3) {
-            log(yellow("jest --max-workers=50% --collectCoverage"));
-            $(`jest --collectCoverage`);
-        } else {
+        if (p3) {
             log(yellow("jest ") + magenta(p3) + yellow(" --collectCoverage"));
-            $(`jest ${p3} --collectCoverage`);
+        } else {
+            log(yellow("jest --max-workers=50% --collectCoverage"));
         }
+        $(`npx jest --collectCoverage`);
         break;
     case "v":
         log(yellow("ng/nvm version"));
@@ -281,7 +291,7 @@ switch (p2) {
                 killPort(p3, "tcp").then(console.log).catch(console.log);
             });
         } else {
-            log(yellow("none"));
+            log(red("Provide port number"));
         }
         break;
     case "l":
