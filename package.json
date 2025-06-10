@@ -1,6 +1,6 @@
 {
     "name": "ng-shortcutter",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "description": "Shortcuts to common Angular/npm commands",
     "bin": {
         "n": "index.js"
@@ -15,7 +15,7 @@
     },
     "overrides": {
         "npm-check": {
-            "package-json": "7.0.0"
+            "package-json": "10.0.1"
         }
     },
     "engines": {

@@ -30,52 +30,22 @@ switch (p2) {
             if (!Object.keys(vulnerabilities).length) {
                 log(green("found 0 vulnerabilities"));
             } else {
-                log(magenta("Package                            Range/Latest"));
-                import("npm-check").then((npmCheck) => {
-                    npmCheck.default({ skipUnused: true }).then((currentState) => {
-                        for (let i in vulnerabilities) {
-                            let pack = "";
-                            if (vulnerabilities[i].fixAvailable.name) {
-                                pack = vulnerabilities[i].fixAvailable.name;
-                            } else {
-                                pack = vulnerabilities[i].nodes[0].split("/").pop();
-                            }
-                            let vuln = "";
-                            if (pack === vulnerabilities[i].name) {
-                                vuln = pack.padEnd(35) + vulnerabilities[i].range.padEnd(10);
-                            } else {
-                                vuln = pack + "\n" + ("    " + vulnerabilities[i].name).padEnd(35) + vulnerabilities[i].range.padEnd(10);
-                            }
-                            if (vulnerabilities[i].fixAvailable === true) {
-                                vuln = vuln + " <- npm audit fix";
-                            }
-                            if (vulnerabilities[i].isDirect || vulnerabilities[i].fixAvailable.name) {
-                                switch (vulnerabilities[i].severity) {
-                                    case "critical":
-                                    case "high":
-                                        log(red(vuln));
-                                        break;
-                                    case "moderate":
-                                        log(yellow(vuln));
-                                        break;
-                                    case "low":
-                                        log(green(vuln));
-                                        break;
-                                    default:
-                                        log(vuln);
-                                }
-                                currentState.get("packages").forEach((pack) => {
-                                    if (vulnerabilities[i].name === pack.moduleName) {
-                                        log("".padEnd(35) + pack.latest);
-                                    }
-                                });
-                            } else {
-                                log(grey(vuln));
-                            }
-                            log(grey("─".repeat(process.stdout.columns)));
-                        }
-                    });
-                });
+                log(magenta("Package                        Affected Range    Fix Version"));
+                for (let i in vulnerabilities) {
+                    const vuln = vulnerabilities[i];
+                    let version = "";
+                    if (vuln.fixAvailable.version) {
+                        version = vuln.fixAvailable.version;
+                    }
+                    const vulnText = vuln.name.padEnd(31) + vuln.range.padEnd(18) + version;
+                    if (vuln.severity === "low") {
+                        log(vulnText);
+                    } else if (vuln.severity === "moderate") {
+                        log(yellow(vulnText));
+                    } else {
+                        log(red(vulnText));
+                    }
+                }
             }
         });
         break;
@@ -130,39 +100,17 @@ switch (p2) {
         break;
     case "o":
     case "oo":
-        log(magenta("Name                              Current   Wanted    Latest    Homepage"));
-        import("npm-check").then((npmCheck) => {
-            npmCheck.default({ skipUnused: true }).then((currentState) => {
-                let anyOutdated = false;
-                let outdatedList = [];
-                currentState.get("packages").forEach((pack) => {
-                    if (!pack.pkgError && !pack.notInPackageJson) {
-                        let outdated =
-                            pack.moduleName.padEnd(34) +
-                            pack.installed.padEnd(10) +
-                            pack.packageWanted.padEnd(10) +
-                            pack.latest.padEnd(10) +
-                            "https://npmjs.com/package/" +
-                            pack.moduleName;
-                        outdatedList.push(outdated);
-                        if (pack.installed !== pack.latest) {
-                            if (pack.installed === pack.packageWanted) {
-                                log(red(outdated));
-                            } else {
-                                log(yellow(outdated));
-                            }
-                            anyOutdated = true;
-                        } else {
-                            if (p2 === "oo") {
-                                log(green(outdated));
-                            }
-                        }
-                    }
-                });
-                if (!anyOutdated && p2 !== "oo") {
-                    outdatedList.forEach((outdated) => {
-                        log(green(outdated));
-                    });
+        const outdated = spawn(`npm outdated --json`);
+        outdated.on("error", function () {});
+        outdated.stdout.on("data", function (data) {
+            log(magenta("Name                                   Current   Wanted    Latest"));
+            const out = JSON.parse(data);
+            Object.keys(out).forEach((key) => {
+                const outText = key.padEnd(39) + out[key].current.padEnd(10) + out[key].wanted.padEnd(10) + out[key].latest;
+                if (out[key].current === out[key].wanted) {
+                    log(yellow(outText));
+                } else {
+                    log(red(outText));
                 }
             });
         });
