@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import chalk from "chalk";
 import fs from "fs";
-import { spawn } from "cross-spawn";
+import spawn from "cross-spawn";
+import path from "path";
 
 const log = console.log;
 const red = chalk.red;
@@ -11,6 +12,7 @@ const green = chalk.green;
 const grey = chalk.grey;
 const p2 = process.argv[2];
 const p3 = process.argv[3];
+let found = false;
 
 function $(cmd) {
     const child = spawn(cmd, p3 ? [p3] : [], { stdio: "inherit", reject: true });
@@ -63,43 +65,46 @@ switch (p2) {
         }
         break;
     case "c":
-        const pathImport = await import("path");
-        const path = pathImport.default;
         log(yellow("cost of dependencies"));
-        import("npm-check").then((npmCheck) => {
-            npmCheck.default({ skipUnused: true }).then((currentState) => {
-                const statePacks = currentState.get("packages");
-                const packSizes = [];
-                const dir = process.cwd();
-                statePacks.forEach((pack) => {
-                    packSizes.push(getDirectorySize(`${dir}\\node_modules\\${pack.moduleName}`, path));
+        spawn(`npm list --json`).stdout.on("data", function (data) {
+            const packNames = Object.keys(JSON.parse(data).dependencies);
+            const packSizes = [];
+            const dir = process.cwd();
+            packNames.forEach((name) => {
+                packSizes.push(getDirectorySize(`${dir}\\node_modules\\${name}`, path));
+            });
+            const formattedPacks = [];
+            Promise.all(packSizes).then((sizes) => {
+                sizes.forEach((size, i) => {
+                    formattedPacks.push({ name: packNames[i], size_MB: Number((size / 1000000).toFixed(2)) });
                 });
-                const formattedPacks = [];
-                Promise.all(packSizes).then((sizes) => {
-                    sizes.forEach((size, i) => {
-                        formattedPacks.push({ name: statePacks[i].moduleName, size_MB: Number((size / 1000000).toFixed(2)) });
-                    });
-                    formattedPacks.sort((a, b) => b.size_MB - a.size_MB);
-                    console.table(formattedPacks);
-                });
+                formattedPacks.sort((a, b) => b.size_MB - a.size_MB);
+                console.table(formattedPacks);
             });
         });
         break;
     case "d":
-        import("npm-check").then((npmCheck) => {
-            npmCheck.default({ skipUnused: false }).then((currentState) => {
-                let filteredPacks = currentState
-                    .get("packages")
-                    .filter((pack) => pack.unused && pack.moduleName !== "tslib" && pack.moduleName !== "@angular-devkit/build-angular");
-                filteredPacks.forEach((pack) => {
-                    log(red(pack.moduleName));
-                });
-                log(yellow("Unused dependencies: "), red(filteredPacks.length));
+        log(yellow("Unused dependencies:"));
+        spawn(`npm list --json`).stdout.on("data", function (data) {
+            const packNames = Object.keys(JSON.parse(data).dependencies);
+            const dir = process.cwd();
+            let displayNone = true;
+            packNames.forEach((name) => {
+                if (!name.includes("@types/") && !name.includes("@typescript-eslint/eslint-plugin")) {
+                    found = false;
+                    searchInFiles(dir, name);
+                    if (!found) {
+                        log(red(name));
+                        displayNone = false;
+                    }
+                }
             });
+            if (displayNone) {
+                log(green("none"));
+            }
         });
         break;
     case "o":
-    case "oo":
         const outdated = spawn(`npm outdated --json`);
         outdated.on("error", function () {});
         outdated.stdout.on("data", function (data) {
@@ -373,6 +378,29 @@ function instructions() {
     );
     log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
     log(red("  nc") + grey("│") + yellow("clear npx cache"));
+}
+
+function searchInFiles(dir, searchText) {
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+    for (const file of files) {
+        const filePath = path.join(dir, file.name);
+        if (file.isDirectory()) {
+            if (![".angular", ".git", "node_modules", "coverage", "dist", "docs"].includes(file.name)) {
+                searchInFiles(filePath, searchText);
+            }
+        } else {
+            if (!["package.json", "package-lock.json"].includes(file.name)) {
+                try {
+                    const content = fs.readFileSync(filePath, "utf8");
+                    if (content.includes(searchText)) {
+                        found = true;
+                    }
+                } catch (err) {
+                    log(`Error reading file: ${filePath}`);
+                }
+            }
+        }
+    }
 }
 
 async function getDirectorySize(dirPath, path) {
