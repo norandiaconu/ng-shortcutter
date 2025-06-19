@@ -235,13 +235,17 @@ switch (p2) {
         break;
     case "k":
         if (p3) {
-            const killPortImport = await import("kill-port");
-            const killPort = killPortImport.default;
-            const httpImport = await import("http");
-            const http = httpImport.default;
-            log(yellow("kill-port ") + magenta(p3));
-            http.createServer().listen(p3, () => {
-                killPort(p3, "tcp").then(console.log).catch(console.log);
+            const regex = new RegExp(`:${p3}.* (.+)`);
+            const netstat = spawn(`netstat -ano`);
+            netstat.stdout.on("data", function (data) {
+                const out = data.toString();
+                const match = out.match(regex);
+                if (match) {
+                    const TASKKILL = spawn(`TASKKILL -F -PID ${match[1]}`);
+                    TASKKILL.stdout.on("data", function (TASKKILLData) {
+                        log(TASKKILLData.toString());
+                    });
+                }
             });
         } else {
             log(red("Provide port number"));
