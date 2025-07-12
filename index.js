@@ -12,10 +12,11 @@ const green = chalk.green;
 const grey = chalk.grey;
 const p2 = process.argv[2];
 const p3 = process.argv[3];
+const args = { stdio: "inherit", reject: true };
 let found = false;
 
 function $(cmd) {
-    const child = spawn(cmd, p3 ? [p3] : [], { stdio: "inherit", reject: true });
+    const child = spawn(cmd, p3 ? [p3] : [], args);
     child.on("error", function (err) {
         if (err.code !== "ENOENT") {
             log(err);
@@ -61,7 +62,7 @@ switch (p2) {
             $(`npm run build`);
         } else {
             log(yellow("ng build"));
-            $(`npx ng build`);
+            $(`ng build`);
         }
         break;
     case "c":
@@ -123,7 +124,7 @@ switch (p2) {
     case "gc":
         if (p3) {
             log(yellow("ng generate component ") + magenta(p3));
-            $(`npx ng g c`);
+            $(`ng g c`);
         } else {
             log(red("Provide component name"));
         }
@@ -206,7 +207,7 @@ switch (p2) {
             $(`npm run start`);
         } else {
             log(yellow("ng s"));
-            $(`npx ng s`);
+            $(`ng s`);
         }
         break;
     case "t":
@@ -230,8 +231,14 @@ switch (p2) {
         break;
     case "v":
         log(yellow("ng/nvm version"));
-        $(`npx ng v`);
+        $(`ng v`);
         $(`nvm list`);
+        break;
+    case "vm":
+        log(yellow("nvm install/use ") + magenta(p3));
+        spawn.sync(`nvm install ${p3}`, args);
+        spawn.sync(`nvm use ${p3}`, args);
+        spawn(`npm i ng-shortcutter -g`, args);
         break;
     case "k":
         if (p3) {
@@ -381,6 +388,7 @@ function instructions() {
             yellow("npm update")
     );
     log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
+    log(red("  vm") + grey("|") + yellow("nvm install/use ") + magenta("node-version"));
     log(red("  nc") + grey("│") + yellow("clear npx cache"));
 }
 
