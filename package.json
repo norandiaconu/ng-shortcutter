@@ -1,15 +1,15 @@
 {
     "name": "ng-shortcutter",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "Shortcuts to common Angular/npm commands",
     "bin": {
         "n": "index.js",
-        "ng": "node_modules/.bin/ng.cmd"
+        "ng": "ng.ps1",
+        "nm": "multiple.ps1"
     },
     "type": "module",
     "license": "MIT",
     "dependencies": {
-        "@angular/cli": "~19.2.15",
         "chalk": "~5.4.1",
         "cross-spawn": "~7.0.6"
     },

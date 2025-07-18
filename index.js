@@ -235,10 +235,16 @@ switch (p2) {
         $(`nvm list`);
         break;
     case "vm":
-        log(yellow("nvm install/use ") + magenta(p3));
-        spawn.sync(`nvm install ${p3}`, args);
-        spawn.sync(`nvm use ${p3}`, args);
-        spawn(`npm i ng-shortcutter -g`, args);
+        if (p3) {
+            log(yellow("nvm install/use ") + magenta(p3));
+            spawn.sync(`nvm install ${p3}`, args);
+            spawn.sync(`nvm use ${p3}`, args);
+            spawn(`npm i ng-shortcutter -g`, args);
+        } else {
+            log(yellow("nvm list"));
+            spawn.sync("nvm ls", args);
+            spawn.sync("nvm ls available", args);
+        }
         break;
     case "k":
         if (p3) {
