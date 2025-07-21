@@ -1,5 +1,24 @@
 if (!$args) {
-    Write-Host " install test lint build start " -BackgroundColor DarkBlue
+    Write-Host "Multiple Shortcuts" -ForegroundColor DarkRed
+    Write-Host "              i" -ForegroundColor DarkRed -NoNewline
+    Write-Host "|" -ForegroundColor DarkGray -NoNewline
+    Write-Host "install" -ForegroundColor DarkYellow -NoNewline
+
+    Write-Host "  t" -ForegroundColor DarkRed -NoNewline
+    Write-Host "|" -ForegroundColor DarkGray -NoNewline
+    Write-Host "test" -ForegroundColor DarkYellow -NoNewline
+
+    Write-Host "  l" -ForegroundColor DarkRed -NoNewline
+    Write-Host "|" -ForegroundColor DarkGray -NoNewline
+    Write-Host "lint" -ForegroundColor DarkYellow -NoNewline
+
+    Write-Host "  b" -ForegroundColor DarkRed -NoNewline
+    Write-Host "|" -ForegroundColor DarkGray -NoNewline
+    Write-Host "build" -ForegroundColor DarkYellow -NoNewline
+
+    Write-Host "  s" -ForegroundColor DarkRed -NoNewline
+    Write-Host "|" -ForegroundColor DarkGray -NoNewline
+    Write-Host "start" -ForegroundColor DarkYellow -NoNewline
     exit
 }
 

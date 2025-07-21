@@ -1,10 +1,10 @@
 {
     "name": "ng-shortcutter",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "description": "Shortcuts to common Angular/npm commands",
     "bin": {
         "n": "index.js",
-        "ng": "ng.ps1",
+        "ng": "ng.cmd",
         "nm": "multiple.ps1"
     },
     "type": "module",

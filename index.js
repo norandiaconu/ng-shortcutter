@@ -138,7 +138,8 @@ switch (p2) {
             log(yellow("npm install ") + magenta(p3) + green(" -g"));
             $(`npm i -g`);
         } else {
-            log(red("Provide package name"));
+            log(red("Updating..."));
+            $(`npm i ng-shortcutter -g`);
         }
         break;
     case "gu":
