@@ -3,6 +3,7 @@ import chalk from "chalk";
 import fs from "fs";
 import spawn from "cross-spawn";
 import path from "path";
+import readline from "readline";
 
 const log = console.log;
 const red = chalk.red;
@@ -34,6 +35,9 @@ switch (p2) {
                 log(green("found 0 vulnerabilities"));
             } else {
                 log(magenta("Package                        Affected Range    Fix Version"));
+                let totalLow = 0;
+                let totalMed = 0;
+                let totalHigh = 0;
                 for (let i in vulnerabilities) {
                     const vuln = vulnerabilities[i];
                     let version = "";
@@ -42,13 +46,17 @@ switch (p2) {
                     }
                     const vulnText = vuln.name.padEnd(31) + vuln.range.padEnd(18) + version;
                     if (vuln.severity === "low") {
-                        log(vulnText);
+                        log(green(vulnText));
+                        totalLow++;
                     } else if (vuln.severity === "moderate") {
                         log(yellow(vulnText));
+                        totalMed++;
                     } else {
                         log(red(vulnText));
+                        totalHigh++;
                     }
                 }
+                log(yellow("Total: ") + green(totalLow + " low ") + yellow(totalMed + " medium ") + red(totalHigh + " high"));
             }
         });
         break;
@@ -76,11 +84,15 @@ switch (p2) {
             });
             const formattedPacks = [];
             Promise.all(packSizes).then((sizes) => {
+                let totalSize = 0;
                 sizes.forEach((size, i) => {
-                    formattedPacks.push({ name: packNames[i], size_MB: Number((size / 1000000).toFixed(2)) });
+                    const formattedSize = Number((size / 1000000).toFixed(2));
+                    formattedPacks.push({ name: packNames[i], size_MB: formattedSize });
+                    totalSize += formattedSize;
                 });
                 formattedPacks.sort((a, b) => b.size_MB - a.size_MB);
                 console.table(formattedPacks);
+                log(yellow("Total: ") + red(totalSize.toFixed(2) + " MB"));
             });
         });
         break;
@@ -104,6 +116,10 @@ switch (p2) {
                 log(green("none"));
             }
         });
+        break;
+    case "de":
+        log(yellow("npm dedupe"));
+        $(`npm dedupe`);
         break;
     case "o":
         const outdated = spawn(`npm outdated --json`);
@@ -140,6 +156,8 @@ switch (p2) {
         } else {
             log(red("Updating..."));
             $(`npm i ng-shortcutter -g`);
+            $(`npm i corepack -g`);
+            $(`npm i npm -g`);
         }
         break;
     case "gu":
@@ -240,6 +258,8 @@ switch (p2) {
             log(yellow("nvm install/use ") + magenta(p3));
             spawn.sync(`nvm install ${p3}`, args);
             spawn.sync(`nvm use ${p3}`, args);
+            log(yellow("npm i ng-shortcutter -g"));
+            await wait("Press ENTER to continue...");
             spawn(`npm i ng-shortcutter -g`, args);
         } else {
             log(yellow("nvm list"));
@@ -343,7 +363,7 @@ function instructions() {
             yellow("lint")
     );
     log(red("General                                      Package"));
-    log(red("a|af") + grey("│") + yellow("audit (fix)").padEnd(50) + red("   g") + grey("│") + yellow("global list"));
+    log(red("a|af") + grey("│") + yellow("audit (fix)").padEnd(53) + red("g") + grey("│") + yellow("global list"));
     log(
         red("   c") +
             grey("│") +
@@ -356,8 +376,8 @@ function instructions() {
     log(
         red("   d") +
             grey("│") +
-            yellow("check unused dependencies").padEnd(50) +
-            red("   i") +
+            yellow("check unused dependencies").padEnd(53) +
+            red("i") +
             grey("│") +
             yellow("install ") +
             magenta("optional-package")
@@ -366,21 +386,21 @@ function instructions() {
         red("  gc") +
             grey("│") +
             yellow("ng generate component ") +
-            magenta("component").padEnd(28) +
-            red("  id") +
+            magenta("component").padEnd(30) +
+            red("id") +
             grey("│") +
             yellow("install ") +
             magenta("package ") +
             green("-D")
     );
-    log(red("   k") + grey("│") + yellow("kill-port").padEnd(50) + red("  un") + grey("│") + yellow("uninstall ") + magenta("package"));
-    log(red("   o") + grey("│") + yellow("outdated").padEnd(50) + red("  li") + grey("│") + yellow("link"));
+    log(red("   k") + grey("│") + yellow("kill-port").padEnd(52) + red("un") + grey("│") + yellow("uninstall ") + magenta("package"));
+    log(red("   o") + grey("│") + yellow("outdated").padEnd(52) + red("li") + grey("│") + yellow("link"));
     log(
         red("   r") +
             grey("│") +
             yellow("npm run ") +
-            magenta("script").padEnd(42) +
-            red("  ul") +
+            magenta("script").padEnd(44) +
+            red("ul") +
             grey("│") +
             yellow("unlink ") +
             magenta("package")
@@ -389,13 +409,15 @@ function instructions() {
         red("t|tc") +
             grey("│") +
             yellow("jest (coverage) ") +
-            magenta("optional-file").padEnd(34) +
-            red("  up") +
+            magenta("optional-file").padEnd(36) +
+            red("up") +
             grey("│") +
             yellow("npm update")
     );
-    log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(50) + red("   p") + grey("│") + yellow("display package.json scripts"));
-    log(red("  vm") + grey("|") + yellow("nvm install/use ") + magenta("node-version"));
+    log(red("   v") + grey("│") + yellow("ng/nvm version").padEnd(53) + red("p") + grey("│") + yellow("display package.json scripts"));
+    log(
+        red("  vm") + grey("│") + yellow("nvm install/use ") + magenta("node-version").padEnd(36) + red("de") + grey("│") + yellow("dedupe")
+    );
     log(red("  nc") + grey("│") + yellow("clear npx cache"));
 }
 
@@ -435,4 +457,17 @@ async function getDirectorySize(dirPath, path) {
     }
     await calculateSize(dirPath);
     return totalSize;
+}
+
+function wait(query) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    return new Promise((resolve) =>
+        rl.question(query, (ans) => {
+            rl.close();
+            resolve(ans);
+        })
+    );
 }
