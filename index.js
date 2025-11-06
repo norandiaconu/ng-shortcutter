@@ -4,7 +4,9 @@ import fs from "fs";
 import spawn from "cross-spawn";
 import path from "path";
 import readline from "readline";
+import yoctoSpinner from "yocto-spinner";
 
+const spinner = yoctoSpinner();
 const log = console.log;
 const red = chalk.red;
 const yellow = chalk.yellow;
@@ -27,13 +29,16 @@ function $(cmd) {
 
 switch (p2) {
     case "a":
+        spinner.start(yellow("npm audit"));
         const audit = spawn(`npm audit --json`);
         audit.on("error", function () {});
         audit.stdout.on("data", function (data) {
             const vulnerabilities = JSON.parse(data).vulnerabilities;
             if (!Object.keys(vulnerabilities).length) {
+                spinner.stop();
                 log(green("found 0 vulnerabilities"));
             } else {
+                spinner.stop();
                 log(magenta("Package                        Affected Range    Fix Version"));
                 let totalLow = 0;
                 let totalMed = 0;
@@ -74,7 +79,7 @@ switch (p2) {
         }
         break;
     case "c":
-        log(yellow("cost of dependencies"));
+        spinner.start(yellow("cost of dependencies"));
         spawn(`npm list --json`).stdout.on("data", function (data) {
             const packNames = Object.keys(JSON.parse(data).dependencies);
             const packSizes = [];
@@ -91,17 +96,19 @@ switch (p2) {
                     totalSize += formattedSize;
                 });
                 formattedPacks.sort((a, b) => b.size_MB - a.size_MB);
+                spinner.stop();
                 console.table(formattedPacks);
                 log(yellow("Total: ") + red(totalSize.toFixed(2) + " MB"));
             });
         });
         break;
     case "d":
-        log(yellow("Unused dependencies:"));
+        spinner.start(yellow("Unused dependencies"));
         spawn(`npm list --json`).stdout.on("data", function (data) {
             const packNames = Object.keys(JSON.parse(data).dependencies);
             const dir = process.cwd();
             let displayNone = true;
+            spinner.stop();
             packNames.forEach((name) => {
                 if (!name.includes("@types/") && !name.includes("@typescript-eslint/eslint-plugin")) {
                     found = false;
@@ -122,9 +129,11 @@ switch (p2) {
         $(`npm dedupe`);
         break;
     case "o":
+        spinner.start(yellow("npm outdated"));
         const outdated = spawn(`npm outdated --json`);
         outdated.on("error", function () {});
         outdated.stdout.on("data", function (data) {
+            spinner.stop();
             log(magenta("Name                                   Current   Wanted    Latest"));
             const out = JSON.parse(data);
             Object.keys(out).forEach((key) => {
@@ -231,6 +240,7 @@ switch (p2) {
         break;
     case "t":
     case "j":
+        process.stdout.write("\x1B[2J\x1B[3J\x1B[H");
         if (p3) {
             log(yellow("jest ") + magenta(p3));
             $(`npx jest`);
