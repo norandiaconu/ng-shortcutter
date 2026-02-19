@@ -158,8 +158,6 @@ switch (p2) {
         } else {
             log(red('Updating...'));
             $(`npm i ng-shortcutter -g`);
-            $(`npm i corepack -g`);
-            $(`npm i npm -g`);
         }
         break;
     case 'gu':
@@ -256,14 +254,15 @@ switch (p2) {
     case 'v':
         if (p3) {
             spinner.start(yellow(`npm view ${p3} versions`));
-            spawn(`npm view ${p3} versions`).stdout.on('data', function (data) {
+            spawn('npm', ['view', p3, 'versions']).stdout.on('data', function (data) {
                 const versions = data
                     .toString()
                     .replace(/'| |\[|\]|\n/g, '')
                     .split(',');
+                const start = versions.length > 99 ? versions.length - 99 : 0;
                 spinner.stop();
                 process.stdout.write(red(versions[0].replace(/,/g, '')) + grey('│'));
-                for (let i = 1; i < versions.length - 1; i++) {
+                for (let i = start; i < versions.length - 1; i++) {
                     process.stdout.write(yellow(versions[i].replace(/,/g, '')) + grey('│'));
                     if (i !== 0 && i % 16 === 0) {
                         log();
