@@ -17,7 +17,7 @@ const green = chalk.green;
 const grey = chalk.hex('#353535');
 const p2 = process.argv[2];
 const p3 = process.argv[3];
-const args = { stdio: 'inherit', reject: true };
+const args: any = { stdio: 'inherit', reject: true };
 let found = false;
 const options = {
     defaultMaxWidth: 60,
@@ -35,9 +35,9 @@ const options = {
     borderBR: grey('┘')
 };
 
-function $(cmd) {
+function $(cmd: string) {
     const child = spawn(cmd, p3 ? [p3] : [], args);
-    child.on('error', function (err) {
+    child.on('error', function (err: any) {
         if (err.code !== 'ENOENT') {
             log(err);
         }
@@ -65,14 +65,14 @@ switch (p2) {
         break;
     case 'c':
         spinner.start(yellow('cost of dependencies'));
-        spawn(`npm list --json`).stdout.on('data', function (data) {
+        spawn(`npm list --json`).stdout?.on('data', function (data) {
             const packNames = Object.keys(JSON.parse(data).dependencies);
-            const packSizes = [];
+            const packSizes: Promise<number>[] = [];
             const dir = process.cwd();
             packNames.forEach((name) => {
                 packSizes.push(getDirectorySize(`${dir}\\node_modules\\${name}`, path));
             });
-            const formattedPacks = [];
+            const formattedPacks: { name: string; size: number }[] = [];
             Promise.all(packSizes).then((sizes) => {
                 let totalSize = 0;
                 sizes.forEach((size, i) => {
@@ -97,7 +97,7 @@ switch (p2) {
         break;
     case 'd':
         spinner.start(yellow('Unused dependencies'));
-        spawn(`npm list --json`).stdout.on('data', function (data) {
+        spawn(`npm list --json`).stdout?.on('data', function (data) {
             const packNames = Object.keys(JSON.parse(data).dependencies);
             const dir = process.cwd();
             let displayNone = true;
@@ -125,7 +125,7 @@ switch (p2) {
         spinner.start(yellow('npm outdated'));
         const outdated = spawn(`npm outdated --json`);
         outdated.on('error', function () {});
-        outdated.stdout.on('data', function (data) {
+        outdated.stdout?.on('data', function (data) {
             spinner.stop();
             log(magenta('Name                                   Current   Wanted    Latest'));
             const out = JSON.parse(data);
@@ -254,11 +254,12 @@ switch (p2) {
     case 'v':
         if (p3) {
             spinner.start(yellow(`npm view ${p3} versions`));
-            spawn('npm', ['view', p3, 'versions']).stdout.on('data', function (data) {
-                const versions = data
+            spawn('npm', ['view', p3, 'versions']).stdout?.on('data', function (data) {
+                let versions = data
                     .toString()
                     .replace(/'| |\[|\]|\n/g, '')
-                    .split(',');
+                    .split(',')
+                    .filter((version: string) => !version.includes('-next.') && !version.includes('-rc.') && !version.includes('-beta.'));
                 const start = versions.length > 99 ? versions.length - 99 : 0;
                 spinner.stop();
                 process.stdout.write(red(versions[0].replace(/,/g, '')) + grey('│'));
@@ -300,12 +301,12 @@ switch (p2) {
         if (port) {
             const regex = new RegExp(`:${port}.* (.+)`);
             const netstat = spawn(`netstat -ano`);
-            netstat.stdout.on('data', function (data) {
+            netstat.stdout?.on('data', function (data) {
                 const out = data.toString();
                 const match = out.match(regex);
                 if (match) {
                     const TASKKILL = spawn(`TASKKILL -F -PID ${match[1]}`);
-                    TASKKILL.stdout.on('data', function (TASKKILLData) {
+                    TASKKILL.stdout?.on('data', function (TASKKILLData) {
                         log(TASKKILLData.toString());
                     });
                 }
@@ -334,7 +335,9 @@ switch (p2) {
                         function (err, data) {
                             const regex = new RegExp(`"dependencies.*\n.*?"(.*?)"`);
                             const match = data.match(regex);
-                            process.stdout.write(yellow(match[1]) + grey(' │ '));
+                            if (match) {
+                                process.stdout.write(yellow(match[1]) + grey(' │ '));
+                            }
                         }
                     );
                 });
@@ -357,16 +360,29 @@ switch (p2) {
                 log(yellow('npm run ') + magenta(p2));
                 $(`npm run ${p2}`);
             } else {
-                log(magenta('    ' + p2) + ': ' + grey('script not found'));
-                scripts(true);
+                let run: string[] = [];
+                commands.forEach((command) => {
+                    if (command.startsWith(p2)) {
+                        run.push(command);
+                    }
+                });
+                if (run.length === 0) {
+                    log(magenta('    ' + p2) + ': ' + grey('script not found'));
+                    scripts(true);
+                } else if (run.length === 1) {
+                    log(yellow('npm run ') + magenta(run[0]));
+                    $(`npm run ${run[0]}`);
+                } else {
+                    log(red('multiple scripts found, need more specificity'), run);
+                }
             }
         } else {
             instructions();
         }
 }
 
-function scripts(show, skipLog) {
-    let commandsArray = [];
+function scripts(show?: boolean, skipLog?: boolean) {
+    let commandsArray: string[] = [];
     const jsonString = fs.readFileSync('./package.json', 'utf8');
     const packageRegex = /\"scripts\": {\s\n?(.*?)\s*}/s;
     const regexArray = packageRegex.exec(jsonString);
@@ -374,7 +390,7 @@ function scripts(show, skipLog) {
         const scripts = regexArray[1].replace(/\"|,/g, '');
         const scriptsArray = scripts.split('\n');
         const scriptsRegex = /(.*?)(: )(.*)/;
-        let rows = [];
+        let rows: string[][] = [];
         scriptsArray.forEach((script) => {
             const commandParts = scriptsRegex.exec(script);
             if (commandParts) {
@@ -445,7 +461,7 @@ function instructions() {
     });
 }
 
-function searchInFiles(dir, searchText) {
+function searchInFiles(dir: string, searchText: string) {
     const files = fs.readdirSync(dir, { withFileTypes: true });
     for (const file of files) {
         const filePath = path.join(dir, file.name);
@@ -468,9 +484,9 @@ function searchInFiles(dir, searchText) {
     }
 }
 
-async function getDirectorySize(dirPath, path) {
+async function getDirectorySize(dirPath: string, path: path.PlatformPath) {
     let totalSize = 0;
-    async function calculateSize(itemPath) {
+    async function calculateSize(itemPath: string) {
         const stats = await fs.promises.stat(itemPath);
         if (stats.isFile()) {
             totalSize += stats.size;
@@ -483,7 +499,7 @@ async function getDirectorySize(dirPath, path) {
     return totalSize;
 }
 
-function wait(query) {
+function wait(query: string) {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -500,7 +516,7 @@ function audit() {
     spinner.start(yellow('npm audit'));
     const audit = spawn(`npm audit --json`);
     audit.on('error', function () {});
-    audit.stdout.on('data', function (data) {
+    audit.stdout?.on('data', function (data) {
         const vulnerabilities = JSON.parse(data).vulnerabilities;
         if (!Object.keys(vulnerabilities).length) {
             spinner.stop();
@@ -534,6 +550,6 @@ function audit() {
     });
 }
 
-function cell(c1, c2, c3) {
+function cell(c1: string, c2: string, c3?: string) {
     return ''.padEnd(5 - c1.length) + red(c1) + grey('│') + yellow(c2) + magenta(c3 ? ' ' + c3 : '');
 }

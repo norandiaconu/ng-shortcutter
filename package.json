@@ -1,11 +1,11 @@
 {
     "name": "ng-shortcutter",
-    "version": "2.0.1",
+    "version": "2.1.0",
     "description": "Shortcuts to common Angular/npm commands",
     "bin": {
-        "n": "index.js",
+        "n": "index.ts",
         "ng": "ng.cmd",
-        "nn": "numerous.js"
+        "nn": "numerous.ts"
     },
     "type": "module",
     "license": "MIT",
@@ -17,6 +17,10 @@
         "yocto-spinner": "~1.0.0"
     },
     "engines": {
-        "node": ">=22"
+        "node": ">=24"
+    },
+    "devDependencies": {
+        "@types/cross-spawn": "~6.0.6",
+        "@types/node": "~24.12.2"
     }
 }
