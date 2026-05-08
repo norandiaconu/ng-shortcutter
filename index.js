@@ -7,7 +7,6 @@ import readline from 'readline';
 import yoctoSpinner from 'yocto-spinner';
 import CG from 'console-grid';
 import { exec } from 'child_process';
-
 const spinner = yoctoSpinner();
 const log = console.log;
 const red = chalk.red;
@@ -17,7 +16,7 @@ const green = chalk.green;
 const grey = chalk.hex('#353535');
 const p2 = process.argv[2];
 const p3 = process.argv[3];
-const args: any = { stdio: 'inherit', reject: true };
+const args = { stdio: 'inherit', reject: true };
 let found = false;
 const options = {
     defaultMaxWidth: 60,
@@ -34,16 +33,14 @@ const options = {
     borderBC: grey('┴'),
     borderBR: grey('┘')
 };
-
-function $(cmd: string) {
+function $(cmd) {
     const child = spawn(cmd, p3 ? [p3] : [], args);
-    child.on('error', function (err: any) {
+    child.on('error', function (err) {
         if (err.code !== 'ENOENT') {
             log(err);
         }
     });
 }
-
 switch (p2) {
     case 'a':
         audit();
@@ -58,7 +55,8 @@ switch (p2) {
         if (scripts().includes('build')) {
             log(yellow('npm run build'));
             $(`npm run build`);
-        } else {
+        }
+        else {
             log(yellow('ng build'));
             $(`ng build`);
         }
@@ -67,12 +65,12 @@ switch (p2) {
         spinner.start(yellow('cost of dependencies'));
         spawn(`npm list --json`).stdout?.on('data', function (data) {
             const packNames = Object.keys(JSON.parse(data).dependencies);
-            const packSizes: Promise<number>[] = [];
+            const packSizes = [];
             const dir = process.cwd();
             packNames.forEach((name) => {
                 packSizes.push(getDirectorySize(`${dir}\\node_modules\\${name}`, path));
             });
-            const formattedPacks: { name: string; size: number }[] = [];
+            const formattedPacks = [];
             Promise.all(packSizes).then((sizes) => {
                 let totalSize = 0;
                 sizes.forEach((size, i) => {
@@ -124,7 +122,7 @@ switch (p2) {
     case 'o':
         spinner.start(yellow('npm outdated'));
         const outdated = spawn(`npm outdated --json`);
-        outdated.on('error', function () {});
+        outdated.on('error', function () { });
         outdated.stdout?.on('data', function (data) {
             spinner.stop();
             log(magenta('Name                                   Current   Wanted    Latest'));
@@ -133,7 +131,8 @@ switch (p2) {
                 const outText = key.padEnd(39) + out[key].current.padEnd(10) + out[key].wanted.padEnd(10) + out[key].latest;
                 if (out[key].current === out[key].wanted) {
                     log(yellow(outText));
-                } else {
+                }
+                else {
                     log(red(outText));
                 }
             });
@@ -143,7 +142,8 @@ switch (p2) {
         if (p3) {
             log(yellow('ng generate component ') + magenta(p3));
             $(`ng g c`);
-        } else {
+        }
+        else {
             log(red('Provide component name'));
         }
         break;
@@ -155,7 +155,8 @@ switch (p2) {
         if (p3) {
             log(yellow('npm install ') + magenta(p3) + green(' -g'));
             $(`npm i -g`);
-        } else {
+        }
+        else {
             log(red('Updating...'));
             $(`npm i ng-shortcutter -g`);
         }
@@ -164,14 +165,16 @@ switch (p2) {
         if (p3) {
             log(yellow('npm uninstall ') + magenta(p3) + green(' -g'));
             $(`npm un -g`);
-        } else {
+        }
+        else {
             log(red('Provide package name'));
         }
         break;
     case 'i':
         if (p3) {
             log(yellow('npm install ') + magenta(p3));
-        } else {
+        }
+        else {
             log(yellow('npm install'));
         }
         $(`npm i`);
@@ -184,7 +187,8 @@ switch (p2) {
         if (p3) {
             log(yellow('npm install ') + magenta(p3) + green(' -D'));
             $(`npm i -D`);
-        } else {
+        }
+        else {
             log(red('Provide package name'));
         }
         break;
@@ -192,7 +196,8 @@ switch (p2) {
         if (p3) {
             log(yellow('npm uninstall ') + magenta(p3));
             $(`npm un`);
-        } else {
+        }
+        else {
             log(red('Provide package name'));
         }
         break;
@@ -205,7 +210,8 @@ switch (p2) {
         if (p3) {
             log(yellow('npm unlink ') + magenta(p3) + green(' -g'));
             spawn.sync(`npm unlink -g`);
-        } else {
+        }
+        else {
             log(red('Provide package name'));
         }
         break;
@@ -220,7 +226,8 @@ switch (p2) {
         if (p3) {
             log(yellow('npm run ') + magenta(p3));
             $(`npm run`);
-        } else {
+        }
+        else {
             log(red('Provide script name'));
         }
         break;
@@ -228,7 +235,8 @@ switch (p2) {
         if (scripts().includes('start')) {
             log(yellow('npm run start'));
             $(`npm run start`);
-        } else {
+        }
+        else {
             log(yellow('ng s'));
             $(`ng s`);
         }
@@ -238,7 +246,8 @@ switch (p2) {
         log(yellow('test ') + magenta(p3 ? p3 : ''));
         if (fs.existsSync('./vitest.config.ts')) {
             $(`npx vitest run --config vitest.config.ts --no-coverage`);
-        } else {
+        }
+        else {
             $(`npm run test`);
         }
         break;
@@ -247,7 +256,8 @@ switch (p2) {
         log(yellow('test ') + magenta(p3 ? p3 : ''));
         if (fs.existsSync('./vitest.config.ts')) {
             $(`npx vitest run --config vitest.config.ts`);
-        } else {
+        }
+        else {
             $(`npm run test`);
         }
         break;
@@ -259,21 +269,24 @@ switch (p2) {
                 const deps = Object.keys(allDeps).filter((one) => one.startsWith(p3));
                 if (deps.length === 0) {
                     view(p3);
-                } else if (deps.length === 1) {
+                }
+                else if (deps.length === 1) {
                     view(deps[0]);
-                } else {
+                }
+                else {
                     log(red('Multiple dependencies found'));
                     deps.forEach((one, index) => {
                         log(green(index) + yellow(': ') + red(one));
                     });
                     const depStr = await wait(yellow('Enter a number to run: '));
                     if (depStr) {
-                        const depNum: number = Number(depStr);
+                        const depNum = Number(depStr);
                         view(deps[depNum]);
                     }
                 }
             });
-        } else {
+        }
+        else {
             log(yellow('ng/nvm version'));
             $(`ng v`);
             $(`nvm list`);
@@ -292,7 +305,8 @@ switch (p2) {
             log(yellow('npm i ng-shortcutter -g'));
             await wait('Press ENTER to continue...');
             spawn(`npm i ng-shortcutter -g`, args);
-        } else {
+        }
+        else {
             log(yellow('nvm list'));
             spawn.sync('nvm ls', args);
             spawn.sync('nvm ls available', args);
@@ -319,7 +333,8 @@ switch (p2) {
         if (scripts().includes('lint')) {
             log(yellow('npm run lint'));
             $(`npm run lint`);
-        } else {
+        }
+        else {
             log(yellow('eslint .'));
             $(`eslint .`);
         }
@@ -328,20 +343,17 @@ switch (p2) {
         fs.readdir(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, (err, files) => {
             if (files == undefined || files?.length === 0) {
                 log(yellow('No npx cache to delete'));
-            } else {
+            }
+            else {
                 process.stdout.write(green('Installed npx packages') + grey(' │ '));
                 files.forEach((file) => {
-                    fs.readFile(
-                        `${process.env.LOCALAPPDATA}\\npm-cache\\_npx\\${file}\\package.json`,
-                        { encoding: 'utf-8' },
-                        function (err, data) {
-                            const regex = new RegExp(`"dependencies.*\n.*?"(.*?)"`);
-                            const match = data.match(regex);
-                            if (match) {
-                                process.stdout.write(yellow(match[1]) + grey(' │ '));
-                            }
+                    fs.readFile(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx\\${file}\\package.json`, { encoding: 'utf-8' }, function (err, data) {
+                        const regex = new RegExp(`"dependencies.*\n.*?"(.*?)"`);
+                        const match = data.match(regex);
+                        if (match) {
+                            process.stdout.write(yellow(match[1]) + grey(' │ '));
                         }
-                    );
+                    });
                 });
                 setTimeout(async () => {
                     log();
@@ -361,8 +373,9 @@ switch (p2) {
             if (commands.includes(p2)) {
                 log(yellow('npm run ') + magenta(p2));
                 $(`npm run ${p2}`);
-            } else {
-                let run: string[] = [];
+            }
+            else {
+                let run = [];
                 commands.forEach((command) => {
                     if (command.startsWith(p2)) {
                         run.push(command);
@@ -371,29 +384,31 @@ switch (p2) {
                 if (run.length === 0) {
                     log(magenta('    ' + p2) + ': ' + grey('script not found'));
                     scripts(true);
-                } else if (run.length === 1) {
+                }
+                else if (run.length === 1) {
                     log(yellow('npm run ') + magenta(run[0]));
                     $(`npm run ${run[0]}`);
-                } else {
+                }
+                else {
                     log(red('Multiple scripts found'));
                     run.forEach((one, index) => {
                         log(green(index) + yellow(': ') + red(one));
                     });
                     const runStr = await wait(yellow('Enter a number to run: '));
                     if (runStr) {
-                        const runNum: number = Number(runStr);
+                        const runNum = Number(runStr);
                         log(yellow('npm run ') + magenta(run[runNum]));
                         $(`npm run ${run[runNum]}`);
                     }
                 }
             }
-        } else {
+        }
+        else {
             instructions();
         }
 }
-
-function scripts(show?: boolean, skipLog?: boolean) {
-    let commandsArray: string[] = [];
+function scripts(show, skipLog) {
+    let commandsArray = [];
     const jsonString = fs.readFileSync('./package.json', 'utf8');
     const packageRegex = /\"scripts\": {\s\n?(.*?)\s*}/s;
     const regexArray = packageRegex.exec(jsonString);
@@ -401,7 +416,7 @@ function scripts(show?: boolean, skipLog?: boolean) {
         const scripts = regexArray[1].replace(/\"|,/g, '');
         const scriptsArray = scripts.split('\n');
         const scriptsRegex = /(.*?)(: )(.*)/;
-        let rows: string[][] = [];
+        let rows = [];
         scriptsArray.forEach((script) => {
             const commandParts = scriptsRegex.exec(script);
             if (commandParts) {
@@ -410,7 +425,8 @@ function scripts(show?: boolean, skipLog?: boolean) {
                 if (show) {
                     rows.push([red(trimmedCommand), yellow(commandParts[3])]);
                 }
-            } else {
+            }
+            else {
                 log(script);
             }
         });
@@ -421,48 +437,47 @@ function scripts(show?: boolean, skipLog?: boolean) {
                 options: options
             });
         }
-    } else {
+    }
+    else {
         if (!skipLog) {
             log(red('No scripts found\n') + jsonString);
         }
     }
     return commandsArray;
 }
-
 function instructions() {
     // prettier-ignore
-    log(
-        red('ng-shortcutter').padEnd(44) +
-            red('i') + grey('│') + yellow('install     ') +
-            red('s') + grey('│') + yellow('start     ') +
-            red('b') + grey('│') + yellow('build     ') +
-            red('t') + grey('│') + yellow('test     ') +
-            red('l') + grey('│') + yellow('lint')
-    );
+    log(red('ng-shortcutter').padEnd(44) +
+        red('i') + grey('│') + yellow('install     ') +
+        red('s') + grey('│') + yellow('start     ') +
+        red('b') + grey('│') + yellow('build     ') +
+        red('t') + grey('│') + yellow('test     ') +
+        red('l') + grey('│') + yellow('lint'));
     // prettier-ignore
     let rows = [
-        [cell('a|af', 'audit (fix)'),              cell('i|ci', '(clean) install', 'pkg?'), cell('g', 'global list')],
-        [cell('c', 'cost of dependencies'),        cell('id', 'install', 'pkg -D'),         cell('gi|gu', 'global (un)install', 'pkg')],
-        [cell('d', 'unused dependencies'),         cell('un', 'uninstall', 'pkg'),          cell('k', 'kill port')],
-        [cell('gc', 'generate component', 'name'), cell('li|ul', '(un)link', 'pkg'),        cell('nc', 'clear npx cache')],
-        [cell('o', 'outdated'),                    cell('up', 'npm update'),                cell('v', 'ng/nvm version')],
-        [cell('r', 'npm run', 'script'),           cell('p', 'package.json scripts'),       cell('vm', 'nvm install/use', 'version')],
-        [cell('t|tc', 'test (coverage)', 'file?'), cell('de', 'dedupe'),                    ''],
+        [cell('a|af', 'audit (fix)'), cell('i|ci', '(clean) install', 'pkg?'), cell('g', 'global list')],
+        [cell('c', 'cost of dependencies'), cell('id', 'install', 'pkg -D'), cell('gi|gu', 'global (un)install', 'pkg')],
+        [cell('d', 'unused dependencies'), cell('un', 'uninstall', 'pkg'), cell('k', 'kill port')],
+        [cell('gc', 'generate component', 'name'), cell('li|ul', '(un)link', 'pkg'), cell('nc', 'clear npx cache')],
+        [cell('o', 'outdated'), cell('up', 'npm update'), cell('v', 'ng/nvm version')],
+        [cell('r', 'npm run', 'script'), cell('p', 'package.json scripts'), cell('vm', 'nvm install/use', 'version')],
+        [cell('t|tc', 'test (coverage)', 'file?'), cell('de', 'dedupe'), ''],
     ];
-
     const commands = scripts(false, true);
     if (commands.length) {
         if (commands.length < 8) {
             for (let i = 0; i < commands.length; i++) {
                 rows[i].push(red(commands[i]));
             }
-        } else {
+        }
+        else {
             for (let i = 0; i < 6; i++) {
                 rows[i].push(red(commands[i]));
             }
             rows[6].push(red('<MORE>'));
         }
-    } else {
+    }
+    else {
         rows[0].push(red('<NONE>'));
     }
     CG({
@@ -471,8 +486,7 @@ function instructions() {
         options: options
     });
 }
-
-function searchInFiles(dir: string, searchText: string) {
+function searchInFiles(dir, searchText) {
     const files = fs.readdirSync(dir, { withFileTypes: true });
     for (const file of files) {
         const filePath = path.join(dir, file.name);
@@ -480,28 +494,30 @@ function searchInFiles(dir: string, searchText: string) {
             if (!['.angular', '.git', 'node_modules', 'coverage', 'dist', 'docs'].includes(file.name)) {
                 searchInFiles(filePath, searchText);
             }
-        } else {
+        }
+        else {
             if (!['package.json', 'package-lock.json'].includes(file.name)) {
                 try {
                     const content = fs.readFileSync(filePath, 'utf8');
                     if (content.includes(searchText)) {
                         found = true;
                     }
-                } catch (err) {
+                }
+                catch (err) {
                     log(`Error reading file: ${filePath}`);
                 }
             }
         }
     }
 }
-
-async function getDirectorySize(dirPath: string, path: path.PlatformPath) {
+async function getDirectorySize(dirPath, path) {
     let totalSize = 0;
-    async function calculateSize(itemPath: string) {
+    async function calculateSize(itemPath) {
         const stats = await fs.promises.stat(itemPath);
         if (stats.isFile()) {
             totalSize += stats.size;
-        } else if (stats.isDirectory()) {
+        }
+        else if (stats.isDirectory()) {
             const items = await fs.promises.readdir(itemPath);
             await Promise.all(items.map((item) => calculateSize(path.join(itemPath, item))));
         }
@@ -509,30 +525,27 @@ async function getDirectorySize(dirPath: string, path: path.PlatformPath) {
     await calculateSize(dirPath);
     return totalSize;
 }
-
-function wait(query: string) {
+function wait(query) {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
-    return new Promise((resolve) =>
-        rl.question(query, (ans) => {
-            rl.close();
-            resolve(ans);
-        })
-    );
+    return new Promise((resolve) => rl.question(query, (ans) => {
+        rl.close();
+        resolve(ans);
+    }));
 }
-
 function audit() {
     spinner.start(yellow('npm audit'));
     const audit = spawn(`npm audit --json`);
-    audit.on('error', function () {});
+    audit.on('error', function () { });
     audit.stdout?.on('data', function (data) {
         const vulnerabilities = JSON.parse(data).vulnerabilities;
         if (!Object.keys(vulnerabilities).length) {
             spinner.stop();
             log(green('found 0 vulnerabilities'));
-        } else {
+        }
+        else {
             spinner.stop();
             log(magenta('Package                        Affected Range    Fix Version'));
             let totalLow = 0;
@@ -548,10 +561,12 @@ function audit() {
                 if (vuln.severity === 'low') {
                     log(green(vulnText));
                     totalLow++;
-                } else if (vuln.severity === 'moderate') {
+                }
+                else if (vuln.severity === 'moderate') {
                     log(yellow(vulnText));
                     totalMed++;
-                } else {
+                }
+                else {
                     log(red(vulnText));
                     totalHigh++;
                 }
@@ -560,19 +575,17 @@ function audit() {
         }
     });
 }
-
-function cell(c1: string, c2: string, c3?: string) {
+function cell(c1, c2, c3) {
     return ''.padEnd(5 - c1.length) + red(c1) + grey('│') + yellow(c2) + magenta(c3 ? ' ' + c3 : '');
 }
-
-function view(packageName: string) {
+function view(packageName) {
     spinner.start(yellow(`npm view ${packageName} versions`));
     spawn('npm', ['view', packageName, 'versions']).stdout?.on('data', function (data) {
         let versions = data
             .toString()
             .replace(/'| |\[|\]|\n/g, '')
             .split(',')
-            .filter((version: string) => !version.includes('-next.') && !version.includes('-rc.') && !version.includes('-beta.'));
+            .filter((version) => !version.includes('-next.') && !version.includes('-rc.') && !version.includes('-beta.'));
         const start = versions.length > 99 ? versions.length - 99 : 0;
         spinner.stop();
         process.stdout.write(red(versions[0].replace(/,/g, '')) + grey('│'));

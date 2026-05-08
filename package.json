@@ -1,12 +1,16 @@
 {
     "name": "ng-shortcutter",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "Shortcuts to common Angular/npm commands",
     "bin": {
-        "n": "index.ts",
+        "n": "index.js",
         "ng": "ng.cmd",
-        "nn": "numerous.ts"
+        "nn": "numerous.js"
     },
+    "scripts": {
+        "build": "tsc"
+    },
+    "files": [],
     "type": "module",
     "license": "MIT",
     "dependencies": {
@@ -21,6 +25,7 @@
     },
     "devDependencies": {
         "@types/cross-spawn": "~6.0.6",
-        "@types/node": "~24.12.2"
+        "@types/node": "~24.12.2",
+        "typescript": "~6.0.3"
     }
 }
