@@ -325,33 +325,24 @@ switch (p2) {
         }
         break;
     case 'nc':
-        fs.readdir(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, (err, files) => {
+        fs.readdir(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, async (err, files) => {
             if (files == undefined || files?.length === 0) {
                 log(yellow('No npx cache to delete'));
             } else {
                 process.stdout.write(green('Installed npx packages') + grey(' │ '));
                 files.forEach((file) => {
-                    fs.readFile(
-                        `${process.env.LOCALAPPDATA}\\npm-cache\\_npx\\${file}\\package.json`,
-                        { encoding: 'utf-8' },
-                        function (err, data) {
-                            const regex = new RegExp(`"dependencies.*\n.*?"(.*?)"`);
-                            const match = data.match(regex);
-                            if (match) {
-                                process.stdout.write(yellow(match[1]) + grey(' │ '));
-                            }
-                        }
-                    );
+                    const data = fs.readFileSync(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx\\${file}\\package.json`, 'utf8');
+                    const jsonData = JSON.parse(data);
+                    const dependency = Object.keys(jsonData.dependencies)[0];
+                    process.stdout.write(yellow(dependency) + grey(' │ '));
                 });
-                setTimeout(async () => {
-                    log();
-                    const response = await wait(red('Delete (y/N)') + ': ');
-                    if (response === 'y') {
-                        fs.rm(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, { recursive: true }, (err) => {
-                            log(yellow('Npx cache deleted'));
-                        });
-                    }
-                }, 100);
+                log();
+                const response = await wait(red('Delete (y/N)') + ': ');
+                if (response === 'y') {
+                    fs.rm(`${process.env.LOCALAPPDATA}\\npm-cache\\_npx`, { recursive: true }, (err) => {
+                        log(yellow('Npx cache deleted'));
+                    });
+                }
             }
         });
         break;
@@ -395,23 +386,14 @@ switch (p2) {
 function scripts(show?: boolean, skipLog?: boolean) {
     let commandsArray: string[] = [];
     const jsonString = fs.readFileSync('./package.json', 'utf8');
-    const packageRegex = /\"scripts\": {\s\n?(.*?)\s*}/s;
-    const regexArray = packageRegex.exec(jsonString);
-    if (regexArray) {
-        const scripts = regexArray[1].replace(/\"|,/g, '');
-        const scriptsArray = scripts.split('\n');
-        const scriptsRegex = /(.*?)(: )(.*)/;
+    const jsonData = JSON.parse(jsonString);
+    const scripts = jsonData.scripts;
+    if (scripts) {
         let rows: string[][] = [];
-        scriptsArray.forEach((script) => {
-            const commandParts = scriptsRegex.exec(script);
-            if (commandParts) {
-                const trimmedCommand = commandParts[1].trim();
-                commandsArray.push(trimmedCommand);
-                if (show) {
-                    rows.push([red(trimmedCommand), yellow(commandParts[3])]);
-                }
-            } else {
-                log(script);
+        Object.entries(scripts).forEach((script) => {
+            commandsArray.push(script[0]);
+            if (show) {
+                rows.push([red(script[0]), yellow(script[1])]);
             }
         });
         if (rows.length) {

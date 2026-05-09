@@ -1,6 +1,6 @@
 {
     "name": "ng-shortcutter",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "description": "Shortcuts to common Angular/npm commands",
     "bin": {
         "n": "index.js",
