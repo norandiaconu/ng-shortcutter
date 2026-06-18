@@ -570,7 +570,7 @@ function view(packageName) {
             .toString()
             .replace(/'| |\[|\]|\n/g, '')
             .split(',')
-            .filter((version) => !version.includes('-next.') && !version.includes('-rc.') && !version.includes('-beta.'));
+            .filter((version) => !['-next.', '-rc.', '-alpha.', '-beta.'].some((ver) => version.includes(ver)));
         const start = versions.length > 99 ? versions.length - 99 : 0;
         spinner.stop();
         process.stdout.write(red(versions[0].replace(/,/g, '')) + grey('│'));
