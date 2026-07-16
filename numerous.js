@@ -1,15 +1,2 @@
 #!/usr/bin/env node
-import concurrently from 'concurrently';
-let commands = [];
-if (process.argv[3]) {
-    for (let i = 2; i < process.argv.length; i++) {
-        commands.push(`n ${process.argv[i]}`);
-    }
-}
-else {
-    const p2 = process.argv[2];
-    for (let i = 0; i < p2.length; i++) {
-        commands.push(`n ${p2.charAt(i)}`);
-    }
-}
-concurrently(commands, { maxProcesses: process.argv[2].charAt(0) === 'i' ? 1 : process.argv.length, prefix: 'none' });
+import concurrently from"concurrently";let commands=[];if(process.argv[3])for(let r=2;r<process.argv.length;r++)commands.push(`n ${process.argv[r]}`);else{const r=process.argv[2];for(let s=0;s<r.length;s++)commands.push(`n ${r.charAt(s)}`)}concurrently(commands,{maxProcesses:"i"===process.argv[2].charAt(0)?1:process.argv.length,prefix:"none"});
