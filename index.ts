@@ -237,7 +237,14 @@ switch (p2) {
         process.stdout.write('\x1B[2J\x1B[3J\x1B[H');
         log(yellow('test ') + magenta(p3 ? p3 : ''));
         if (fs.existsSync('./vitest.config.ts')) {
-            $(`npx vitest run --config vitest.config.ts --no-coverage`);
+            spawn.sync('npx vitest run --config vitest.config.ts --no-coverage', args);
+            fs.readFile(`./.git/HEAD`, { encoding: 'utf-8' }, async function (err, data) {
+                const regex = new RegExp(`.*\/(.*)`);
+                const match = data.match(regex);
+                if (match) {
+                    log(red('Branch:'), yellow(match[1]));
+                }
+            });
         } else {
             $(`npm run test`);
         }
@@ -520,6 +527,7 @@ function audit() {
             let totalLow = 0;
             let totalMed = 0;
             let totalHigh = 0;
+            let totalCritical = 0;
             for (let i in vulnerabilities) {
                 const vuln = vulnerabilities[i];
                 let version = '';
@@ -533,12 +541,21 @@ function audit() {
                 } else if (vuln.severity === 'moderate') {
                     log(yellow(vulnText));
                     totalMed++;
-                } else {
+                } else if (vuln.severity === 'high') {
                     log(red(vulnText));
                     totalHigh++;
+                } else {
+                    log(magenta(vulnText));
+                    totalCritical++;
                 }
             }
-            log(yellow('Total: ') + green(totalLow + ' low ') + yellow(totalMed + ' medium ') + red(totalHigh + ' high'));
+            log(
+                yellow('Total: ') +
+                    green(totalLow + ' low ') +
+                    yellow(totalMed + ' medium ') +
+                    red(totalHigh + ' high ') +
+                    magenta(totalCritical + ' critical')
+            );
         }
     });
 }
