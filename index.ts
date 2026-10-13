@@ -6,7 +6,6 @@ import path from 'path';
 import readline from 'readline';
 import yoctoSpinner from 'yocto-spinner';
 import CG from 'console-grid';
-import { exec } from 'child_process';
 
 const spinner = yoctoSpinner();
 const log = console.log;
@@ -288,21 +287,26 @@ switch (p2) {
         break;
     case 'vm':
         if (p3) {
-            exec('net session', function (err) {
-                if (err) {
-                    log(red('Rerun as admin'));
-                }
-            });
-            log(yellow('nvm install/use ') + magenta(p3));
-            spawn.sync(`nvm install ${p3}`, args);
-            spawn.sync(`nvm use ${p3}`, args);
-            log(yellow('npm i ng-shortcutter -g'));
-            await wait('Press ENTER to continue...');
-            spawn(`npm i ng-shortcutter -g`, args);
+            log(yellow('nvm use ') + magenta(p3));
+            const resp = spawn.sync(`nvm use ${p3}`, args);
+            if (resp.status === 1) {
+                await wait(`Press ENTER to install Node ${p3}...`);
+                spawn.sync(`nvm i ${p3}`, args);
+                log(yellow(`Switching to Node ${p3}`));
+                spawn.sync(`nvm use ${p3}`, args);
+                log(yellow('Installing ng-shortcutter'));
+                spawn.sync('npm i ng-shortcutter -g', args);
+                $('n vm');
+            }
         } else {
             log(yellow('nvm list'));
-            spawn.sync('nvm ls', args);
-            spawn.sync('nvm ls available', args);
+            $('nvm ls');
+            const installedNodes = spawn(`nvm ls --json`);
+            installedNodes.stdout?.on('data', function (data) {
+                const nodes = JSON.parse(data);
+                const node = nodes.find((node: any) => node.default);
+                $(`nvm ls releases ${node.version.slice(0, 2)} --limit=5`);
+            });
         }
         break;
     case 'k':
@@ -434,7 +438,7 @@ function instructions() {
         [cell('c', 'cost of dependencies'),        cell('id', 'install', 'pkg -D'),         cell('gi|gu', 'global (un)install', 'pkg')],
         [cell('d', 'unused dependencies'),         cell('un', 'uninstall', 'pkg'),          cell('k', 'kill port')],
         [cell('gc', 'generate component', 'name'), cell('li|ul', '(un)link', 'pkg'),        cell('nc', 'clear npx cache')],
-        [cell('o', 'outdated'),                    cell('up', 'npm update'),                cell('v', 'ng/nvm version')],
+        [cell('o', 'outdated'),                    cell('up', 'npm update'),                cell('v', 'ng/nvm version', 'pkg')],
         [cell('r', 'npm run', 'script'),           cell('p', 'package.json scripts'),       cell('vm', 'nvm install/use', 'version')],
         [cell('t|tc', 'test (coverage)', 'file?'), cell('de', 'dedupe'),                    ''],
     ];

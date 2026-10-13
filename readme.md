@@ -54,7 +54,7 @@
   <tr>
     <td>o│outdated</td>
     <td>up│npm update</td>
-    <td>v│ng/nvm version</td>
+    <td>v│ng/nvm version pkg</td>
   </tr>
   <tr>
     <td>r│npm run script</td>
